@@ -17,7 +17,8 @@ $gitPath = "C:\Program Files\Git\cmd\git.exe"
 
 if (Test-Path $gitPath) {
     Write-Host "✓ Git found at: $gitPath" -ForegroundColor $green
-} else {
+}
+else {
     Write-Host "✗ Git not found. Please install Git first:" -ForegroundColor $red
     Write-Host "  Download from: https://git-scm.com/download/win" -ForegroundColor $yellow
     Write-Host ""
@@ -38,7 +39,8 @@ Write-Host "Setting up Git repository..." -ForegroundColor $yellow
 # Check if already initialized
 if (Test-Path .\.git) {
     Write-Host "✓ Git repository already initialized" -ForegroundColor $green
-} else {
+}
+else {
     Write-Host "Initializing new Git repository..." -ForegroundColor $yellow
     & git init
     Write-Host "✓ Git repository initialized" -ForegroundColor $green
@@ -54,7 +56,8 @@ if ([string]::IsNullOrEmpty($userName)) {
     $gitUser = Read-Host "Username"
     & git config user.name "$gitUser"
     Write-Host "✓ Git username set to: $gitUser" -ForegroundColor $green
-} else {
+}
+else {
     Write-Host "✓ Git user already configured: $userName" -ForegroundColor $green
 }
 
@@ -64,7 +67,8 @@ if ([string]::IsNullOrEmpty($userEmail)) {
     $gitEmail = Read-Host "Email"
     & git config user.email "$gitEmail"
     Write-Host "✓ Git email set to: $gitEmail" -ForegroundColor $green
-} else {
+}
+else {
     Write-Host "✓ Git email already configured: $userEmail" -ForegroundColor $green
 }
 
@@ -88,7 +92,8 @@ $status = & git status --porcelain
 if ($status) {
     & git commit -m "Initial commit: Buku Tamu application with professional 2-column design, backend API, and database setup"
     Write-Host "✓ Commit created" -ForegroundColor $green
-} else {
+}
+else {
     Write-Host "✓ No changes to commit" -ForegroundColor $green
 }
 
@@ -101,7 +106,8 @@ if ([string]::IsNullOrEmpty($remoteUrl)) {
     Write-Host "Adding remote: https://github.com/yourvz/bukutamu.git" -ForegroundColor $yellow
     & git remote add origin https://github.com/yourvz/bukutamu.git
     Write-Host "✓ Remote origin configured" -ForegroundColor $green
-} else {
+}
+else {
     Write-Host "✓ Remote origin already set to: $remoteUrl" -ForegroundColor $green
 }
 
@@ -116,7 +122,8 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host ""
     Write-Host "✓ Successfully pushed to GitHub!" -ForegroundColor $green
     Write-Host "Repository: https://github.com/yourvz/bukutamu" -ForegroundColor $green
-} else {
+}
+else {
     Write-Host ""
     Write-Host "✗ Push failed. Please check:" -ForegroundColor $red
     Write-Host "  1. GitHub account credentials" -ForegroundColor $yellow
