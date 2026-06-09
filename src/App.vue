@@ -35,21 +35,30 @@ const submitForm = async () => {
   }
   isSubmitting.value = true
   try {
-    await axios.post('http://localhost:3000/api/tamu', {
+    const response = await axios.post('http://localhost:3000/api/tamu', {
       nama: nama.value.trim(),
       telepon: telepon.value.trim(),
       dari: dari.value,
       nama_instansi: dari.value === 'umum' ? null : instansiNama.value.trim(),
       keperluan: keperluan.value.trim()
-    }, { headers: { 'Content-Type': 'application/json' }, timeout: 3000 })
-  } catch (e) {}
-  alert('Terima kasih! Formulir Anda telah dikirim.')
-  nama.value = ''
-  telepon.value = ''
-  dari.value = 'umum'
-  instansiNama.value = ''
-  keperluan.value = ''
-  isSubmitting.value = false
+    }, { headers: { 'Content-Type': 'application/json' }, timeout: 5000 })
+    alert('✓ Formulir berhasil dikirim! Terima kasih telah mengunjungi.')
+    nama.value = ''
+    telepon.value = ''
+    dari.value = 'umum'
+    instansiNama.value = ''
+    keperluan.value = ''
+  } catch (error) {
+    if (error.response) {
+      submitError.value = 'Error: ' + (error.response.data.error || 'Gagal mengirim data')
+    } else if (error.request) {
+      submitError.value = '⚠️ Server tidak merespons. Pastikan backend running di localhost:3000'
+    } else {
+      submitError.value = 'Error: ' + error.message
+    }
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 <template>
@@ -104,36 +113,252 @@ const submitForm = async () => {
   </div>
 </template>
 <style scoped>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-.app-container { display: flex; min-height: 100vh; font-family: system-ui; }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background: #f5f5f5;
+}
+
 .hero-section {
   flex: 1;
-  background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://videshiiya.com/app/uploads/2019/05/BCC-018.jpg');
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)), 
+              url('https://videshiiya.com/app/uploads/2019/05/BCC-018.jpg');
   background-size: cover;
   background-position: center;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 40px;
+  align-items: flex-start;
+  padding: 50px 40px;
   color: white;
+  position: relative;
+  overflow: hidden;
 }
-.hero-header { width: 100%; }
-.current-time { font-size: 48px; font-weight: 700; }
-.current-date { font-size: 16px; margin-top: 10px; }
-.hero-footer { width: 100%; }
-.security-badge { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-.form-section { flex: 1; background: white; display: flex; flex-direction: column; justify-content: center; padding: 60px 40px; }
-.form-header { margin-bottom: 30px; }
-.form-label { font-size: 28px; font-weight: 700; }
-.form-description { font-size: 14px; color: #666; margin-top: 10px; }
-.form-wrapper { display: flex; flex-direction: column; gap: 20px; max-width: 400px; }
-.form-group { display: flex; flex-direction: column; gap: 8px; }
-label { font-size: 14px; font-weight: 600; }
-input, select, textarea { padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; font-family: inherit; }
-input:focus, select:focus, textarea:focus { outline: none; border-color: #4a90e2; }
-textarea { min-height: 80px; }
-.submit-btn { padding: 12px 20px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
-.submit-btn:hover:not(:disabled) { background: #0056b3; }
-.submit-btn:disabled { background: #ccc; cursor: not-allowed; }
-.error-message { background: #fee; color: #c33; padding: 12px; border-radius: 6px; font-size: 14px; }
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.3));
+  pointer-events: none;
+}
+
+.hero-header {
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.current-time {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 16px;
+  letter-spacing: -1px;
+}
+
+.current-date {
+  font-size: 16px;
+  font-weight: 400;
+  opacity: 0.95;
+  line-height: 1.5;
+}
+
+.hero-footer {
+  width: 100%;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 20px;
+  flex-direction: column;
+}
+
+.security-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 12px 16px;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: fit-content;
+}
+
+.form-section {
+  flex: 1;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 50px 40px;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.08);
+}
+
+.form-header {
+  margin-bottom: 35px;
+  text-align: left;
+  width: 100%;
+  max-width: 420px;
+}
+
+.form-label {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.form-description {
+  font-size: 15px;
+  color: #666;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.form-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+  max-width: 420px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2a2a2a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+input, select, textarea {
+  padding: 13px 14px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  background: white;
+  transition: all 0.25s ease;
+  color: #333;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #999;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #2e7d32;
+  background: #fafafa;
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.25);
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1b5e20 0%, #003300 100%);
+  box-shadow: 0 6px 20px rgba(46, 125, 50, 0.35);
+  transform: translateY(-2px);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.65;
+  box-shadow: none;
+}
+
+.error-message {
+  background: #ffebee;
+  color: #c62828;
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  border-left: 4px solid #c62828;
+  margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+
+  .hero-section {
+    min-height: 280px;
+    padding: 30px 20px;
+    justify-content: flex-start;
+  }
+
+  .hero-header {
+    margin-bottom: 40px;
+  }
+
+  .current-time {
+    font-size: 40px;
+  }
+
+  .current-date {
+    font-size: 14px;
+  }
+
+  .form-section {
+    padding: 30px 20px;
+  }
+
+  .form-label {
+    font-size: 24px;
+  }
+
+  .form-wrapper {
+    max-width: 100%;
+  }
+}
 </style>
