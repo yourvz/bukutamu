@@ -21,7 +21,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Build outputs
-*.js
 *.ts
-!src/**/*.ts
-!backend/src/**/*.ts
+node_modules/**/*.js
+!src/**/*.js
+!backend/src/**/*.js
