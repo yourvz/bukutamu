@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Buku Tamu</title>
+    <script>
+      // Redirect to dist/index.html
+      const path = window.location.pathname;
+      if (path === "/bukutamu/" || path === "/bukutamu") {
+        window.location.href = "/bukutamu/dist/";
+      } else if (!path.includes("/dist/") && !path.includes("/assets/")) {
+        // For any other 404, try redirecting to dist version
+        const distPath = path.replace("/bukutamu/", "/bukutamu/dist/");
+        window.location.href = distPath;
+      }
+    </script>
+  </head>
+  <body>
+    <p>Redirecting...</p>
+  </body>
+</html>
