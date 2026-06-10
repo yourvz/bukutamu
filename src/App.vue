@@ -14,30 +14,6 @@ const isSubmitting = ref(false)
 const submitError = ref('')
 const submitSuccess = ref(false)
 
-// Determine API URL based on environment
-const getApiUrl = () => {
-  // Try import.meta.env first (for Vite build-time variables)
-  const envUrl = import.meta.env.VITE_API_URL
-  
-  // If env var exists, use it
-  if (envUrl) {
-    return envUrl + '/api/tamu'
-  }
-  
-  // Auto-detect based on current location
-  // If on localhost, use localhost backend
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:3000/api/tamu'
-  }
-  
-  // If on GitHub Pages or other domain, try same-origin or config
-  // For now, use a configurable fallback
-  const protocol = window.location.protocol
-  const host = window.location.hostname
-  // Try same server (if backend is deployed at same origin)
-  return `${protocol}//${host}/api/tamu`
-}
-
 const updateTime = () => {
   const now = new Date()
   const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
@@ -89,8 +65,7 @@ const submitForm = async () => {
   
   isSubmitting.value = true
   try {
-    const apiUrl = getApiUrl()
-    console.log('Sending form to API:', apiUrl)
+    const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api/tamu'
     const response = await axios.post(apiUrl, {
       nama: nama.value.trim(),
       telepon: telepon.value.trim(),
