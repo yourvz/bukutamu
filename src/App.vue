@@ -2,17 +2,27 @@
 import { ref, onMounted } from 'vue'
 import { createClient } from '@supabase/supabase-js'
 
-// Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-// Use service role key for frontend (bypass RLS for public form)
-// In production, should use custom RLS policies instead
-const supabaseKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
+// Initialize Supabase client with error handling
+let supabase = null
+let supabaseError = ref('')
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Supabase configuration missing. Please check .env')
+try {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const supabaseKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('❌ Supabase configuration missing. Please check .env')
+    supabaseError.value = 'Konfigurasi Supabase tidak ditemukan'
+    supabase = null
+  } else {
+    supabase = createClient(supabaseUrl, supabaseKey)
+    console.log('✅ Supabase client initialized successfully')
+  }
+} catch (error) {
+  console.error('❌ Error initializing Supabase:', error.message)
+  supabaseError.value = `Error: ${error.message}`
+  supabase = null
 }
-
-const supabase = createClient(supabaseUrl, supabaseKey)
 
 // Form state
 const currentTime = ref('')
@@ -78,6 +88,13 @@ const submitForm = async () => {
   
   isSubmitting.value = true
   try {
+    // Check if Supabase is available
+    if (!supabase) {
+      submitError.value = 'Database tidak tersedia. Silakan coba lagi nanti atau hubungi administrator.'
+      isSubmitting.value = false
+      return
+    }
+
     // Get device info
     const userAgent = navigator.userAgent
     const ipInfo = await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ ip: 'unknown' }))
@@ -101,7 +118,7 @@ const submitForm = async () => {
     
     if (error) {
       console.error('Supabase error:', error)
-      submitError.value = 'Error: ' + (error.message || 'Gagal mengirim data')
+      submitError.value = 'Error: ' + (error.message || 'Gagal mengirim data. Cek koneksi internet Anda.')
       return
     }
     
@@ -156,10 +173,16 @@ const submitForm = async () => {
           <p class="form-description">Mohon isi formulir di bawah ini. Proses hanya membutuhkan kurang dari satu menit.</p>
         </div>
 
-        <form @submit.prevent="submitForm" class="form-wrapper">
+        <!-- Supabase Error Alert -->
+        <div v-if="supabaseError" class="supabase-error-alert">
+          ⚠️ {{ supabaseError }}
+          <br><small>Sistem sedang dalam perbaikan. Silakan coba lagi dalam beberapa menit.</small>
+        </div>
+
+        <form @submit.prevent="submitForm" class="form-wrapper" :class="{ 'form-disabled': supabaseError }">
           <div class="form-group">
             <label>NAMA PENGUNJUNG</label>
-            <input v-model="nama" type="text" placeholder="Silahkan Isi Nama Anda" required />
+            <input v-model="nama" type="text" placeholder="Silahkan Isi Nama Anda" required :disabled="!!supabaseError" />
           </div>
           
           <div class="form-group">
@@ -186,8 +209,8 @@ const submitForm = async () => {
             <textarea v-model="keperluan" placeholder="Cth. Meeting, pengiriman dokumen, dsb." required></textarea>
           </div>
 
-          <button type="submit" :disabled="isSubmitting" class="submit-btn">
-            <span>{{ isSubmitting ? 'Mengirim...' : 'Kirim' }}</span>
+          <button type="submit" :disabled="isSubmitting || !!supabaseError" class="submit-btn">
+            <span>{{ isSubmitting ? 'Mengirim...' : (supabaseError ? 'Sistem Sedang Error' : 'Kirim') }}</span>
             <svg v-if="!isSubmitting" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="5" y1="12" x2="19" y2="12"></line>
               <polyline points="12 5 19 12 12 19"></polyline>
@@ -527,6 +550,32 @@ textarea {
 
 .submit-btn:hover:not(:disabled) svg {
   transform: translateX(4px);
+}
+
+.supabase-error-alert {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  border-left: 4px solid #f59e0b;
+  margin-bottom: 20px;
+}
+
+.supabase-error-alert small {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.form-disabled input,
+.form-disabled select,
+.form-disabled textarea {
+  background: #f3f4f6 !important;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .error-message {
