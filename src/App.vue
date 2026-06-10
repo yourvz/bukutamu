@@ -65,7 +65,8 @@ const submitForm = async () => {
   
   isSubmitting.value = true
   try {
-    const response = await axios.post(import.meta.env.VITE_API_URL || 'http://localhost:3000/api/tamu', {
+    const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api/tamu'
+    const response = await axios.post(apiUrl, {
       nama: nama.value.trim(),
       telepon: telepon.value.trim(),
       dari: dari.value,
