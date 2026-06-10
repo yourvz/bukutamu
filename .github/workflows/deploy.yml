@@ -35,17 +35,13 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Prepare for deployment
-        run: |
-          # Copy dist folder contents to deployment directory
-          mkdir -p deploy
-          cp -r dist/* deploy/
-          ls -la deploy/
+      - name: List build contents
+        run: ls -la dist/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "./deploy"
+          path: "./dist"
 
   deploy:
     name: Deploy
