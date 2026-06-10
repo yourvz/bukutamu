@@ -17,7 +17,7 @@ const PORT = parseInt(process.env.APP_PORT || '3000', 10)
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5174', 'http://127.0.0.1:5174'], // Frontend URLs
+  origin: ['http://localhost:5174', 'http://127.0.0.1:5174', 'http://localhost:5175', 'http://127.0.0.1:5175'], // Frontend URLs
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }))
