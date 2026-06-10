@@ -4,10 +4,12 @@ import { createClient } from '@supabase/supabase-js'
 
 // Initialize Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Use service role key for frontend (bypass RLS for public form)
+// In production, should use custom RLS policies instead
+const supabaseKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Supabase configuration missing. Please check .env.production')
+  console.error('❌ Supabase configuration missing. Please check .env')
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey)

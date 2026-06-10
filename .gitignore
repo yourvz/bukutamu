@@ -26,3 +26,4 @@ node_modules/**/*.js
 !src/**/*.js
 !backend/src/**/*.js
 index.html
+/index.html
