@@ -2,6 +2,17 @@
 import { ref, onMounted } from 'vue'
 import { createClient } from '@supabase/supabase-js'
 
+// Initialize Supabase client
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('❌ Supabase configuration missing. Please check .env.production')
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+// Form state
 const currentTime = ref('')
 const currentDate = ref('')
 const years = ref('')
@@ -29,17 +40,6 @@ onMounted(() => {
   updateTime()
   setInterval(updateTime, 1000)
 })
-
-const initSupabase = () => {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-  
-  if (!supabaseUrl || !supabaseKey) {
-    console.error('❌ Supabase credentials missing')
-    return null
-  }
-  return createClient(supabaseUrl, supabaseKey)
-}
 
 const submitForm = async () => {
   submitError.value = ''
@@ -76,12 +76,11 @@ const submitForm = async () => {
   
   isSubmitting.value = true
   try {
-    const supabase = initSupabase()
-    if (!supabase) {
-      submitError.value = 'Konfigurasi Supabase tidak valid'
-      return
-    }
+    // Get device info
+    const userAgent = navigator.userAgent
+    const ipInfo = await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ ip: 'unknown' }))
     
+    // Insert into Supabase
     const { data, error } = await supabase
       .from('tamu')
       .insert([
@@ -91,13 +90,16 @@ const submitForm = async () => {
           dari: dari.value,
           nama_instansi: dari.value !== 'umum' ? instansiNama.value.trim() : null,
           keperluan: keperluan.value.trim(),
-          created_at: new Date().toISOString()
+          user_agent: userAgent,
+          ip_address: ipInfo.ip,
+          waktu_kunjungan: new Date().toISOString()
         }
       ])
+      .select()
     
     if (error) {
-      submitError.value = 'Error: ' + (error.message || 'Gagal mengirim data')
       console.error('Supabase error:', error)
+      submitError.value = 'Error: ' + (error.message || 'Gagal mengirim data')
       return
     }
     
@@ -113,8 +115,8 @@ const submitForm = async () => {
       submitSuccess.value = false
     }, 5000)
   } catch (error) {
+    console.error('Error:', error)
     submitError.value = 'Error: ' + error.message
-    console.error('Submission error:', error)
   } finally {
     isSubmitting.value = false
   }
