@@ -1,7 +1,18 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { createClient } from '@supabase/supabase-js'
 
+// Initialize Supabase client
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('❌ Supabase configuration missing. Please check .env.production')
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+// Form state
 const currentTime = ref('')
 const currentDate = ref('')
 const years = ref('')
@@ -65,14 +76,32 @@ const submitForm = async () => {
   
   isSubmitting.value = true
   try {
-    const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api/tamu'
-    const response = await axios.post(apiUrl, {
-      nama: nama.value.trim(),
-      telepon: telepon.value.trim(),
-      dari: dari.value,
-      nama_instansi: dari.value !== 'umum' ? instansiNama.value.trim() : null,
-      keperluan: keperluan.value.trim()
-    }, { headers: { 'Content-Type': 'application/json' }, timeout: 5000 })
+    // Get device info
+    const userAgent = navigator.userAgent
+    const ipInfo = await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ ip: 'unknown' }))
+    
+    // Insert into Supabase
+    const { data, error } = await supabase
+      .from('tamu')
+      .insert([
+        {
+          nama: nama.value.trim(),
+          telepon: telepon.value.trim(),
+          dari: dari.value,
+          nama_instansi: dari.value !== 'umum' ? instansiNama.value.trim() : null,
+          keperluan: keperluan.value.trim(),
+          user_agent: userAgent,
+          ip_address: ipInfo.ip,
+          waktu_kunjungan: new Date().toISOString()
+        }
+      ])
+      .select()
+    
+    if (error) {
+      console.error('Supabase error:', error)
+      submitError.value = 'Error: ' + (error.message || 'Gagal mengirim data')
+      return
+    }
     
     submitSuccess.value = true
     nama.value = ''
@@ -86,13 +115,8 @@ const submitForm = async () => {
       submitSuccess.value = false
     }, 5000)
   } catch (error) {
-    if (error.response) {
-      submitError.value = 'Error: ' + (error.response.data.error || 'Gagal mengirim data')
-    } else if (error.request) {
-      submitError.value = '⚠️ Server tidak merespons. Pastikan backend running.'
-    } else {
-      submitError.value = 'Error: ' + error.message
-    }
+    console.error('Error:', error)
+    submitError.value = 'Error: ' + error.message
   } finally {
     isSubmitting.value = false
   }
