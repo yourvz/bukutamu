@@ -8,9 +8,14 @@ on:
 permissions:
   contents: write
   pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,16 +25,18 @@ jobs:
           cache: "npm"
       - run: npm ci
       - run: npm run build
-      - name: Prepare for GitHub Pages
-        run: |
-          # Copy dist files to root for GitHub Pages
-          cp dist/index.html .
-          mkdir -p assets
-          cp -r dist/assets/* assets/
-      - name: Commit changes
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add index.html assets/ dist/
-          git commit -m "chore: build and deploy" || echo "No changes"
-          git push
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: "./dist"
+
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
