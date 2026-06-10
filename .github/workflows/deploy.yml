@@ -35,13 +35,17 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Copy dist to root for GitHub Pages
-        run: cp -r dist/* . && ls -la index.html dist/
+      - name: Prepare for deployment
+        run: |
+          # Copy dist folder contents to deployment directory
+          mkdir -p deploy
+          cp -r dist/* deploy/
+          ls -la deploy/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "."
+          path: "./deploy"
 
   deploy:
     name: Deploy
