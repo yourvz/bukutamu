@@ -2,49 +2,27 @@
 import { ref, onMounted } from 'vue'
 import { createClient } from '@supabase/supabase-js'
 
-// Initialize Supabase client with error handling and timeout
+// Initialize Supabase client with error handling
 let supabase = null
-const supabaseError = ref('')
-let supabaseInitialized = false
+let supabaseError = ref('')
 
-// Helper function with timeout
-const initSupabase = () => {
-  return new Promise((resolve) => {
-    const timeout = setTimeout(() => {
-      console.warn('⚠️ Supabase initialization timeout')
-      supabaseError.value = 'Koneksi database lambat'
-      resolve(false)
-    }, 5000) // 5 second timeout
+try {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const supabaseKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
 
-    try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-      const supabaseKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY
-
-      if (!supabaseUrl || !supabaseKey) {
-        console.error('❌ Supabase configuration missing')
-        supabaseError.value = 'Konfigurasi Supabase tidak ditemukan'
-        clearTimeout(timeout)
-        resolve(false)
-        return
-      }
-
-      // Initialize client
-      supabase = createClient(supabaseUrl, supabaseKey)
-      console.log('✅ Supabase client initialized')
-      clearTimeout(timeout)
-      supabaseInitialized = true
-      resolve(true)
-    } catch (error) {
-      console.error('❌ Supabase error:', error.message)
-      supabaseError.value = `Error: ${error.message}`
-      clearTimeout(timeout)
-      resolve(false)
-    }
-  })
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('❌ Supabase configuration missing. Please check .env')
+    supabaseError.value = 'Konfigurasi Supabase tidak ditemukan'
+    supabase = null
+  } else {
+    supabase = createClient(supabaseUrl, supabaseKey)
+    console.log('✅ Supabase client initialized successfully')
+  }
+} catch (error) {
+  console.error('❌ Error initializing Supabase:', error.message)
+  supabaseError.value = `Error: ${error.message}`
+  supabase = null
 }
-
-// Initialize Supabase immediately (non-blocking)
-initSupabase()
 
 // Form state
 const currentTime = ref('')
