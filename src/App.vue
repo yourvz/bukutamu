@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { createClient } from '@supabase/supabase-js'
 
 const currentTime = ref('')
 const currentDate = ref('')
@@ -29,6 +29,17 @@ onMounted(() => {
   updateTime()
   setInterval(updateTime, 1000)
 })
+
+const initSupabase = () => {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('❌ Supabase credentials missing')
+    return null
+  }
+  return createClient(supabaseUrl, supabaseKey)
+}
 
 const submitForm = async () => {
   submitError.value = ''
@@ -65,14 +76,30 @@ const submitForm = async () => {
   
   isSubmitting.value = true
   try {
-    const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000') + '/api/tamu'
-    const response = await axios.post(apiUrl, {
-      nama: nama.value.trim(),
-      telepon: telepon.value.trim(),
-      dari: dari.value,
-      nama_instansi: dari.value !== 'umum' ? instansiNama.value.trim() : null,
-      keperluan: keperluan.value.trim()
-    }, { headers: { 'Content-Type': 'application/json' }, timeout: 5000 })
+    const supabase = initSupabase()
+    if (!supabase) {
+      submitError.value = 'Konfigurasi Supabase tidak valid'
+      return
+    }
+    
+    const { data, error } = await supabase
+      .from('tamu')
+      .insert([
+        {
+          nama: nama.value.trim(),
+          telepon: telepon.value.trim(),
+          dari: dari.value,
+          nama_instansi: dari.value !== 'umum' ? instansiNama.value.trim() : null,
+          keperluan: keperluan.value.trim(),
+          created_at: new Date().toISOString()
+        }
+      ])
+    
+    if (error) {
+      submitError.value = 'Error: ' + (error.message || 'Gagal mengirim data')
+      console.error('Supabase error:', error)
+      return
+    }
     
     submitSuccess.value = true
     nama.value = ''
@@ -86,13 +113,8 @@ const submitForm = async () => {
       submitSuccess.value = false
     }, 5000)
   } catch (error) {
-    if (error.response) {
-      submitError.value = 'Error: ' + (error.response.data.error || 'Gagal mengirim data')
-    } else if (error.request) {
-      submitError.value = '⚠️ Server tidak merespons. Pastikan backend running.'
-    } else {
-      submitError.value = 'Error: ' + error.message
-    }
+    submitError.value = 'Error: ' + error.message
+    console.error('Submission error:', error)
   } finally {
     isSubmitting.value = false
   }
