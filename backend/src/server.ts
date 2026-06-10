@@ -1,10 +1,16 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { createConnection } from 'mysql2/promise'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
-// Load environment variables
-dotenv.config()
+// Get current directory for ESM
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+// Load environment variables from backend root
+dotenv.config({ path: path.join(__dirname, '..', '.env') })
 
 const app = express()
 const PORT = parseInt(process.env.APP_PORT || '3000', 10)
@@ -18,27 +24,30 @@ app.use(cors({
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-// Database connection configuration
-const dbConfig = {
-  host: process.env.DB_HOST || '127.0.0.1',
-  port: parseInt(process.env.DB_PORT || '3306', 10),
-  user: process.env.DB_USER || 'buku_tamu_app',
-  password: process.env.DB_PASSWORD || 'secure_password_here',
-  database: process.env.DB_NAME || 'buku_tamu_db',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+// Supabase Configuration
+const supabaseUrl = process.env.SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('❌ Missing Supabase credentials in .env file')
+  console.error('Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY')
+  process.exit(1)
 }
 
-// Database connection
-let pool: any
+// Create Supabase client with service role key for backend operations
+let supabase: SupabaseClient
 
-async function connectToDatabase() {
+function connectToDatabase() {
   try {
-    pool = await createConnection(dbConfig)
-    console.log('Connected to MySQL database successfully')
+    supabase = createClient(supabaseUrl!, supabaseServiceKey!, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+    console.log('✅ Connected to Supabase successfully')
   } catch (error) {
-    console.error('Database connection failed:', error)
+    console.error('❌ Supabase connection failed:', error)
     process.exit(1)
   }
 }
@@ -81,36 +90,47 @@ const validateTamuEntry = (req: express.Request, res: express.Response, next: ex
   next()
 }
 
-// Buku Tamu Routes
+// Health check endpoint
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', database: 'supabase', timestamp: new Date().toISOString() })
+})
+
+// Buku Tamu Routes - CREATE
 app.post('/api/tamu', validateTamuEntry, async (req, res) => {
   try {
     const { nama, telepon, dari, nama_instansi, keperluan } = req.body
     
-    // Prepare SQL query
-    const query = `
-      INSERT INTO tamu 
-      (nama, telepon, dari, nama_instansi, keperluan, ip_address, user_agent) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `
-
     // Get client IP and user agent
     const ip_address = req.ip || req.socket.remoteAddress || '127.0.0.1'
     const user_agent = req.get('User-Agent') || ''
 
-    // Execute query
-    const [result] = await pool.execute(query, [
-      nama,
-      telepon, 
-      dari, 
-      dari !== 'umum' ? nama_instansi : null, 
-      keperluan,
-      ip_address,
-      user_agent
-    ])
+    // Insert into Supabase
+    const { data, error } = await supabase
+      .from('tamu')
+      .insert([
+        {
+          nama: nama.trim(),
+          telepon: telepon.trim(),
+          dari: dari,
+          nama_instansi: dari !== 'umum' ? nama_instansi?.trim() : null,
+          keperluan: keperluan.trim(),
+          ip_address,
+          user_agent
+        }
+      ])
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Supabase insert error:', error)
+      res.status(500).json({ error: 'Gagal menyimpan data', details: error.message })
+      return
+    }
 
     res.status(201).json({ 
       message: 'Buku Tamu entry added successfully', 
-      id: (result as any).insertId 
+      id: data.id,
+      data
     })
   } catch (error) {
     console.error('Error adding Buku Tamu entry:', error)
@@ -118,14 +138,47 @@ app.post('/api/tamu', validateTamuEntry, async (req, res) => {
   }
 })
 
-// Get Buku Tamu entries
+// Get Buku Tamu entries - READ
 app.get('/api/tamu', async (_req, res) => {
   try {
-    const query = 'SELECT * FROM laporan_kunjungan LIMIT 100'
-    const [rows] = await pool.execute(query)
-    res.json(rows)
+    const { data, error } = await supabase
+      .from('tamu')
+      .select('*')
+      .order('waktu_kunjungan', { ascending: false })
+      .limit(100)
+
+    if (error) {
+      console.error('Supabase fetch error:', error)
+      res.status(500).json({ error: 'Gagal mengambil data', details: error.message })
+      return
+    }
+
+    res.json(data)
   } catch (error) {
     console.error('Error fetching Buku Tamu entries:', error)
+    res.status(500).json({ error: 'Internal server error', details: (error as Error).message })
+  }
+})
+
+// Get Statistics
+app.get('/api/tamu/statistics', async (_req, res) => {
+  try {
+    const { data, error } = await supabase.rpc('get_tamu_statistics')
+
+    if (error) {
+      console.error('Statistics error:', error)
+      res.status(500).json({ error: 'Gagal mengambil statistik', details: error.message })
+      return
+    }
+
+    res.json(data?.[0] || {
+      total_kunjungan: 0,
+      kunjungan_hari_ini: 0,
+      kunjungan_minggu_ini: 0,
+      kunjungan_bulan_ini: 0
+    })
+  } catch (error) {
+    console.error('Error fetching statistics:', error)
     res.status(500).json({ error: 'Internal server error', details: (error as Error).message })
   }
 })
@@ -140,13 +193,14 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 })
 
 // Start server
-async function startServer() {
+function startServer() {
   try {
-    await connectToDatabase()
+    connectToDatabase()
     
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running on http://localhost:${PORT}`)
-      console.log(`Environment: ${process.env.NODE_ENV}`)
+      console.log(`🚀 Server running on http://localhost:${PORT}`)
+      console.log(`📦 Environment: ${process.env.NODE_ENV}`)
+      console.log(`🔗 Supabase URL: ${supabaseUrl}`)
     })
   } catch (error) {
     console.error('Failed to start server:', error)

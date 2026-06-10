@@ -4,6 +4,7 @@ import axios from 'axios'
 
 const currentTime = ref('')
 const currentDate = ref('')
+const years = ref('')
 const nama = ref('')
 const telepon = ref('')
 const dari = ref('umum')
@@ -11,6 +12,7 @@ const instansiNama = ref('')
 const keperluan = ref('')
 const isSubmitting = ref(false)
 const submitError = ref('')
+const submitSuccess = ref(false)
 
 const updateTime = () => {
   const now = new Date()
@@ -20,6 +22,7 @@ const updateTime = () => {
   const minutes = String(now.getMinutes()).padStart(2, '0')
   currentTime.value = `${hours}.${minutes}`
   currentDate.value = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`
+  years.value = `${now.getFullYear()}`
 }
 
 onMounted(() => {
@@ -29,30 +32,63 @@ onMounted(() => {
 
 const submitForm = async () => {
   submitError.value = ''
-  if (!nama.value.trim() || !telepon.value.trim() || !keperluan.value.trim()) {
-    submitError.value = 'Silakan isi semua field'
+  submitSuccess.value = false
+  
+  // Validasi
+  if (!nama.value.trim()) {
+    submitError.value = 'Silakan isi nama lengkap'
     return
   }
+  
+  if (!telepon.value.trim()) {
+    submitError.value = 'Silakan isi nomor telepon'
+    return
+  }
+  
+  // Validasi format telepon
+  const phoneRegex = /^[0-9+\-\s()]{8,}$/
+  if (!phoneRegex.test(telepon.value)) {
+    submitError.value = 'Format nomor telepon tidak valid'
+    return
+  }
+  
+  // Validasi instansi/organisasi jika dipilih
+  if (dari.value !== 'umum' && !instansiNama.value.trim()) {
+    submitError.value = `Silakan isi nama ${dari.value === 'instansi' ? 'Instansi' : 'Organisasi'}`
+    return
+  }
+  
+  if (!keperluan.value.trim()) {
+    submitError.value = 'Silakan isi keperluan kunjungan'
+    return
+  }
+  
   isSubmitting.value = true
   try {
-    const response = await axios.post('http://localhost:3000/api/tamu', {
+    const response = await axios.post(import.meta.env.VITE_API_URL || 'http://localhost:3000/api/tamu', {
       nama: nama.value.trim(),
       telepon: telepon.value.trim(),
       dari: dari.value,
-      nama_instansi: dari.value === 'umum' ? null : instansiNama.value.trim(),
+      nama_instansi: dari.value !== 'umum' ? instansiNama.value.trim() : null,
       keperluan: keperluan.value.trim()
     }, { headers: { 'Content-Type': 'application/json' }, timeout: 5000 })
-    alert('✓ Formulir berhasil dikirim! Terima kasih telah mengunjungi.')
+    
+    submitSuccess.value = true
     nama.value = ''
     telepon.value = ''
     dari.value = 'umum'
     instansiNama.value = ''
     keperluan.value = ''
+    
+    // Reset success message after 5 seconds
+    setTimeout(() => {
+      submitSuccess.value = false
+    }, 5000)
   } catch (error) {
     if (error.response) {
       submitError.value = 'Error: ' + (error.response.data.error || 'Gagal mengirim data')
     } else if (error.request) {
-      submitError.value = '⚠️ Server tidak merespons. Pastikan backend running di localhost:3000'
+      submitError.value = '⚠️ Server tidak merespons. Pastikan backend running.'
     } else {
       submitError.value = 'Error: ' + error.message
     }
@@ -63,56 +99,88 @@ const submitForm = async () => {
 </script>
 <template>
   <div class="app-container">
+    <!-- Hero Section - Left Side -->
     <div class="hero-section">
+      <!-- Header with Logo -->
       <div class="hero-header">
-        <p class="current-time">{{ currentTime }}</p>
-        <p class="current-date">{{ currentDate }}</p>
+        <div class="time-display">
+          <p class="current-time">{{ currentTime }}</p>
+          <p class="current-date">{{ currentDate }}</p>
+        </div>
       </div>
+
+      <!-- Footer with Time -->
       <div class="hero-footer">
+        
         <div class="security-badge">
-          <span>Data Anda aman</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          <span>Data Anda aman & terenkripsi</span>
         </div>
       </div>
     </div>
+
+    <!-- Form Section - Right Side -->
     <div class="form-section">
-      <div class="form-header">
-        <p class="form-label">Buku Tamu</p>
-        <p class="form-description">Mohon isi formulir</p>
+      <div class="form-container">
+        <div class="form-header">
+          <span class="form-badge">BUKU TAMU</span>
+          <p class="form-description">Mohon isi formulir di bawah ini. Proses hanya membutuhkan kurang dari satu menit.</p>
+        </div>
+
+        <form @submit.prevent="submitForm" class="form-wrapper">
+          <div class="form-group">
+            <label>NAMA PENGUNJUNG</label>
+            <input v-model="nama" type="text" placeholder="Silahkan Isi Nama Anda" required />
+          </div>
+          
+          <div class="form-group">
+            <label>NO. TELEPON</label>
+            <input v-model="telepon" type="tel" placeholder="08XX XXXX XXXX" maxlength="15" required />
+          </div>
+          
+          <div class="form-group">
+            <label>DARI</label>
+            <select v-model="dari" required>
+              <option value="umum">Umum</option>
+              <option value="instansi">Instansi</option>
+              <option value="organisasi">Organisasi</option>
+            </select>
+          </div>
+          
+          <div v-if="dari !== 'umum'" class="form-group">
+            <label>NAMA {{ dari === 'instansi' ? 'INSTANSI' : 'ORGANISASI' }}</label>
+            <input v-model="instansiNama" type="text" :placeholder="`Nama ${dari === 'instansi' ? 'Instansi' : 'Organisasi'} Anda`" required />
+          </div>
+          
+          <div class="form-group">
+            <label>KEPERLUAN KUNJUNGAN</label>
+            <textarea v-model="keperluan" placeholder="Cth. Meeting, pengiriman dokumen, dsb." required></textarea>
+          </div>
+
+          <button type="submit" :disabled="isSubmitting" class="submit-btn">
+            <span>{{ isSubmitting ? 'Mengirim...' : 'Kirim' }}</span>
+            <svg v-if="!isSubmitting" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </button>
+
+          <p v-if="submitError" class="error-message">{{ submitError }}</p>
+          <p v-if="submitSuccess" class="success-message">✓ Kunjungan berhasil didaftarkan! Terima kasih.</p>
+          
+          <p class="form-disclaimer">
+            UPTD Pengelolaan Parkir @{{years}}
+          </p>
+        </form>
       </div>
-      <form @submit.prevent="submitForm" class="form-wrapper">
-        <div class="form-group">
-          <label>Nama Lengkap</label>
-          <input v-model="nama" type="text" placeholder="Nama Anda" required />
-        </div>
-        <div class="form-group">
-          <label>Nomor Telepon</label>
-          <input v-model="telepon" type="tel" placeholder="08XX" required />
-        </div>
-        <div class="form-group">
-          <label>Asal</label>
-          <select v-model="dari" required>
-            <option value="umum">Umum</option>
-            <option value="instansi">Instansi</option>
-            <option value="organisasi">Organisasi</option>
-          </select>
-        </div>
-        <div v-if="dari !== 'umum'" class="form-group">
-          <label>Nama {{ dari === 'instansi' ? 'Instansi' : 'Organisasi' }}</label>
-          <input v-model="instansiNama" type="text" required />
-        </div>
-        <div class="form-group">
-          <label>Keperluan</label>
-          <textarea v-model="keperluan" placeholder="Jelaskan keperluan" required></textarea>
-        </div>
-        <button type="submit" :disabled="isSubmitting" class="submit-btn">
-          {{ isSubmitting ? 'Mengirim...' : 'Kirim' }}
-        </button>
-        <p v-if="submitError" class="error-message">{{ submitError }}</p>
-      </form>
     </div>
   </div>
 </template>
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -122,21 +190,26 @@ const submitForm = async () => {
 .app-container {
   display: flex;
   min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-  background: #f5f5f5;
+  height: 100vh;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #ffffff;
+  overflow: hidden;
 }
 
+/* ============================================
+   HERO SECTION - LEFT SIDE
+   ============================================ */
 .hero-section {
   flex: 1;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.3)), 
-              url('https://videshiiya.com/app/uploads/2019/05/BCC-018.jpg');
+  background: 
+    linear-gradient(135deg, rgba(15, 23, 42, 0.400) 0%, rgba(30, 41, 59, 0.75) 100%),
+    url('https://videshiiya.com/app/uploads/2019/05/BCC-018.jpg');
   background-size: cover;
   background-position: center;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  align-items: flex-start;
-  padding: 50px 40px;
+  padding: 40px 48px;
   color: white;
   position: relative;
   overflow: hidden;
@@ -149,93 +222,192 @@ const submitForm = async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.3));
+  background: linear-gradient(180deg, transparent 0%, rgba(15, 23, 42, 0.4) 100%);
   pointer-events: none;
 }
 
+/* Header with Logo */
 .hero-header {
-  width: 100%;
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
-.current-time {
-  font-size: 56px;
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.logo-icon svg {
+  width: 22px;
+  height: 22px;
+  color: white;
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.logo-subtitle {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  opacity: 0.7;
+  color: #f59e0b;
+}
+
+/* Hero Content */
+.hero-content {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 520px;
+}
+
+.welcome-badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  color: #f59e0b;
+  margin-bottom: 20px;
+}
+
+.hero-title {
+  font-size: 42px;
   font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 24px;
+  letter-spacing: -0.5px;
+}
+
+.hero-title em {
+  font-style: italic;
+  color: #fbbf24;
+}
+
+.hero-description {
+  font-size: 15px;
+  line-height: 1.7;
+  opacity: 0.85;
+  max-width: 400px;
+  font-weight: 400;
+}
+
+/* Hero Footer */
+.hero-footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.time-display {
+  display: flex;
+  flex-direction: column;
+}
+
+.time-display .current-time {
+  font-size: 48px;
+  font-weight: 300;
   line-height: 1;
-  margin-bottom: 16px;
   letter-spacing: -1px;
 }
 
-.current-date {
-  font-size: 16px;
+.time-display .current-date {
+  font-size: 18px;
+  opacity: 0.7;
+  margin-top: 6px;
   font-weight: 400;
-  opacity: 0.95;
-  line-height: 1.5;
-}
-
-.hero-footer {
-  width: 100%;
-  position: relative;
-  z-index: 1;
-  display: flex;
-  gap: 20px;
-  flex-direction: column;
 }
 
 .security-badge {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 14px;
+  gap: 8px;
+  font-size: 13px;
   font-weight: 500;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 12px 16px;
-  border-radius: 8px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  width: fit-content;
+  opacity: 0.8;
 }
 
+.security-badge svg {
+  opacity: 0.7;
+}
+
+/* ============================================
+   FORM SECTION - RIGHT SIDE
+   ============================================ */
 .form-section {
   flex: 1;
-  background: white;
+  background: #ffffff;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
-  padding: 50px 40px;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.08);
+  justify-content: center;
+  padding: 48px;
+  overflow-y: auto;
 }
 
-.form-header {
-  margin-bottom: 35px;
-  text-align: left;
+.form-container {
   width: 100%;
   max-width: 420px;
 }
 
-.form-label {
+.form-header {
+  margin-bottom: 36px;
+}
+
+.form-badge {
+  display: inline-block;
+  font-size: 26px;
+  font-weight: 1000;
+  letter-spacing: 2px;
+  color: #000000;
+  margin-bottom: 10px;
+}
+
+.form-title {
   font-size: 32px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 8px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  margin-bottom: 12px;
   letter-spacing: -0.5px;
 }
 
 .form-description {
   font-size: 15px;
-  color: #666;
-  font-weight: 400;
+  color: #64748b;
   line-height: 1.6;
 }
 
 .form-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  width: 100%;
-  max-width: 420px;
+  gap: 24px;
 }
 
 .form-group {
@@ -245,39 +417,49 @@ const submitForm = async () => {
 }
 
 .form-group label {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
-  color: #2a2a2a;
+  letter-spacing: 1px;
+  color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 input, select, textarea {
-  padding: 13px 14px;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 8px;
+  padding: 16px 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
   font-size: 15px;
   font-family: inherit;
-  background: white;
-  transition: all 0.25s ease;
-  color: #333;
+  background: #ffffff;
+  transition: all 0.2s ease;
+  color: #1e293b;
+}
+
+select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 18px;
+  padding-right: 48px;
 }
 
 input::placeholder, textarea::placeholder {
-  color: #999;
+  color: #94a3b8;
 }
 
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: #2e7d32;
-  background: #fafafa;
-  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+  border-color: #1e293b;
+  box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.08);
 }
 
 textarea {
   min-height: 100px;
   resize: vertical;
   font-family: inherit;
+  line-height: 1.5;
 }
 
 .submit-btn {
@@ -285,23 +467,22 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 14px 28px;
-  background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+  padding: 18px 32px;
+  background: #0f172a;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   margin-top: 8px;
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.25);
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1b5e20 0%, #003300 100%);
-  box-shadow: 0 6px 20px rgba(46, 125, 50, 0.35);
-  transform: translateY(-2px);
+  background: #1e293b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
 }
 
 .submit-btn:active:not(:disabled) {
@@ -309,56 +490,176 @@ textarea {
 }
 
 .submit-btn:disabled {
-  background: #ccc;
+  background: #94a3b8;
   cursor: not-allowed;
-  opacity: 0.65;
-  box-shadow: none;
+}
+
+.submit-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.submit-btn:hover:not(:disabled) svg {
+  transform: translateX(4px);
 }
 
 .error-message {
-  background: #ffebee;
-  color: #c62828;
+  background: #fef2f2;
+  color: #dc2626;
   padding: 14px 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 500;
-  border-left: 4px solid #c62828;
-  margin-top: 12px;
+}
+
+.success-message {
+  background: #f0fdf4;
+  color: #16a34a;
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.form-disclaimer {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  line-height: 1.6;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* ============================================
+   RESPONSIVE - MOBILE
+   ============================================ */
+@media (max-width: 1024px) {
+  .hero-section {
+    padding: 32px 36px;
+  }
+  
+  .hero-title {
+    font-size: 36px;
+  }
+  
+  .form-section {
+    padding: 36px;
+  }
+  
+  .form-title {
+    font-size: 28px;
+  }
 }
 
 @media (max-width: 768px) {
   .app-container {
     flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
   }
 
   .hero-section {
-    min-height: 280px;
-    padding: 30px 20px;
-    justify-content: flex-start;
+    min-height: auto;
+    padding: 28px 24px;
+    flex: none;
+  }
+  
+  .hero-content {
+    padding: 32px 0;
   }
 
-  .hero-header {
-    margin-bottom: 40px;
+  .welcome-badge {
+    font-size: 10px;
+    margin-bottom: 12px;
   }
 
-  .current-time {
-    font-size: 40px;
+  .hero-title {
+    font-size: 28px;
+    margin-bottom: 16px;
   }
 
-  .current-date {
+  .hero-description {
     font-size: 14px;
+  }
+  
+  .hero-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .time-display .current-time {
+    font-size: 28px;
+  }
+
+  .time-display .current-date {
+    font-size: 12px;
   }
 
   .form-section {
-    padding: 30px 20px;
+    padding: 32px 24px;
+    flex: none;
+  }
+  
+  .form-container {
+    max-width: 100%;
   }
 
-  .form-label {
+  .form-header {
+    margin-bottom: 28px;
+  }
+
+  .form-title {
     font-size: 24px;
   }
 
+  .form-description {
+    font-size: 14px;
+  }
+  
   .form-wrapper {
-    max-width: 100%;
+    gap: 20px;
+  }
+
+  input, textarea {
+    padding: 14px 16px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+  
+  .submit-btn {
+    padding: 16px 24px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-section {
+    padding: 24px 20px;
+  }
+  
+  .logo-container {
+    gap: 12px;
+  }
+  
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .logo-title {
+    font-size: 14px;
+  }
+  
+  .hero-title {
+    font-size: 24px;
+  }
+  
+  .form-section {
+    padding: 28px 20px;
+  }
+  
+  .form-title {
+    font-size: 22px;
   }
 }
 </style>

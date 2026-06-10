@@ -11,10 +11,10 @@
     "migrate": "node scripts/migrate.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
-    "express": "^4.22.2",
-    "mysql2": "^3.22.5"
+    "express": "^4.22.2"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
