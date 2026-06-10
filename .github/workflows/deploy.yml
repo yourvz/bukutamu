@@ -1,4 +1,4 @@
-name: Build and Commit dist
+name: Build and Deploy to GitHub Pages
 
 on:
   push:
@@ -7,9 +7,10 @@ on:
 
 permissions:
   contents: write
+  pages: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,10 +20,16 @@ jobs:
           cache: "npm"
       - run: npm ci
       - run: npm run build
-      - name: Commit dist changes
+      - name: Prepare for GitHub Pages
+        run: |
+          # Copy dist files to root for GitHub Pages
+          cp dist/index.html .
+          mkdir -p assets
+          cp -r dist/assets/* assets/
+      - name: Commit changes
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git add dist/
-          git commit -m "chore: update dist build" || echo "No changes to commit"
+          git add index.html assets/ dist/
+          git commit -m "chore: build and deploy" || echo "No changes"
           git push
