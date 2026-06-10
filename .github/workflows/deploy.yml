@@ -1,32 +1,50 @@
-name: Build and Deploy
+name: Deploy to GitHub Pages
 
 on:
   push:
     branches:
       - main
-    paths-ignore:
-      - ".github/**"
-      - "404.html"
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-          cache: "npm"
-      - run: npm ci
-      - run: npm run build
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Commit build artifacts
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies with npm ci (with retry)
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add dist/
-          git commit -m "chore: build artifacts" || echo "No changes"
-          git push
+          npm ci --prefer-offline --no-audit || npm ci --registry https://registry.npmjs.org || npm ci --registry https://registry.taobao.org/npm
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
