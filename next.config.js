@@ -2,9 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  output: 'export',
-  basePath: '/bukutamu',
-  assetPrefix: '/bukutamu/',
+  output: "export",
+  basePath: "/bukutamu",
+  assetPrefix: "/bukutamu/",
   images: {
     unoptimized: true,
   },

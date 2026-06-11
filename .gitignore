@@ -2,6 +2,14 @@
 node_modules/
 build/
 
+# Next.js Build Output
+.next/
+out/
+*.test.ts
+*.test.tsx
+*.test.js
+*.test.jsx
+
 # Environment
 .env
 .env.local
@@ -20,10 +28,5 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Build outputs
-*.ts
-node_modules/**/*.js
-!src/**/*.js
-!backend/src/**/*.js
-index.html
-/index.html
+# OS
+Thumbs.db

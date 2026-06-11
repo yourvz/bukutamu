@@ -2,22 +2,23 @@
   "name": "buku-tamu",
   "version": "1.0.0",
   "description": "Buku Tamu Landing Page Application",
-  "type": "module",
+  "private": true,
   "scripts": {
-    "dev": "vite --port 5174",
-    "build": "vite build",
-    "preview": "vite preview",
-    "start": "npm run dev"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "export": "next build",
+    "lint": "next lint"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.0",
-    "vue": "^3.3.4"
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "next": "14.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.4.2",
-    "@vitejs/plugin-vue": "^4.6.2",
-    "typescript": "^5.0.4",
-    "vite": "^4.5.14",
-    "vue-tsc": "^1.8.3"
+    "@types/node": "20.10.0",
+    "@types/react": "18.2.37",
+    "@types/react-dom": "18.2.15",
+    "typescript": "5.3.3"
   }
 }
