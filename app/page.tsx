@@ -244,7 +244,7 @@ export default function Home() {
                   onChange={(e) =>
                     setFormData({ ...formData, telepon: e.target.value })
                   }
-                  placeholder="Contoh: 081234567890"
+                  placeholder="08xxxxxxxx"
                   maxLength={15}
                 />
               </div>
@@ -300,7 +300,7 @@ export default function Home() {
                 onChange={(e) =>
                   setFormData({ ...formData, keperluan: e.target.value })
                 }
-                placeholder="Jelaskan keperluan kunjungan Anda..."
+                placeholder="Keperluan kunjungan Anda..."
               />
             </div>
 
