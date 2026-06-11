@@ -5,9 +5,9 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   output: "export",
-  distDir: ".", // Output to root for GitHub Pages
-  // basePath is /bukutamu for yourvz.github.io/bukutamu/ subpath
-  basePath: "/bukutamu",
+  distDir: "docs", // Output to docs folder
+  // No basePath needed - GitHub Pages will serve /docs as the root
+  basePath: "",
   images: {
     unoptimized: true,
   },
