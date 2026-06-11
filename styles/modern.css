@@ -114,7 +114,7 @@ html, body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(26, 35, 50, 0.75) 0%, rgba(15, 20, 25, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(26, 35, 50, 0.40) 0%, rgba(15, 20, 25, 0.85) 100%);
   pointer-events: none;
 }
 
@@ -131,7 +131,24 @@ html, body {
 }
 
 .hero-text {
-  margin-bottom: 3rem;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.hero-text .time {
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-text .date {
+  font-size: 0.95rem;
+  opacity: 0.8;
+  margin: 0.75rem 0 0 0;
+  text-transform: capitalize;
 }
 
 .hero-content {
@@ -143,55 +160,14 @@ html, body {
   justify-content: space-between;
 }
 
-.hero-title {
-  font-size: 3.5rem;
-  font-weight: 900;
-  line-height: 1.2;
-  margin-bottom: 2rem;
-  letter-spacing: -0.02em;
-  text-align: left;
-}
-
-.hero-title em {
-  font-style: italic;
-  display: block;
-  font-weight: 400;
-  opacity: 0.9;
-}
-
-.hero-description {
-  font-size: 1rem;
-  line-height: 1.6;
-  opacity: 0.85;
-  margin-bottom: 2rem;
-  max-width: 500px;
-  text-align: left;
-}
-
 .hero-footer {
   margin-top: auto;
 }
 
 .time-display {
-  padding-top: 2rem;
+  padding-top: 1.2rem;
   border-top: 1px solid rgba(255, 255, 255, 0.3);
   text-align: left;
-}
-
-.time-display .time {
-  font-size: 3.5rem;
-  font-weight: 700;
-  margin: 0;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-
-.time-display .date {
-  font-size: 0.95rem;
-  opacity: 0.8;
-  margin: 0.75rem 0 0 0;
-  text-transform: capitalize;
 }
 
 /* ============ FORM PANEL SECTION ============ */
@@ -544,11 +520,7 @@ html, body {
     background-attachment: scroll;
   }
 
-  .hero-title {
-    font-size: 2.5rem;
-  }
-
-  .time-display .time {
+  .hero-text .time {
     font-size: 2.5rem;
   }
 }
@@ -560,17 +532,19 @@ html, body {
   }
 
   .hero-section {
-    min-height: 40vh;
+    min-height: 0vh;
     padding: 2rem 1.5rem;
     background-attachment: scroll;
   }
 
-  .hero-title {
-    font-size: 1.75rem;
+  .hero-text .time {
+    font-size: 2rem;
   }
 
-  .time-display .time {
-    font-size: 1.75rem;
+  .time-display {
+    padding-top: 0.2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    text-align: left;
   }
 
   .form-panel-section {

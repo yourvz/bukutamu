@@ -49,6 +49,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
+  const [years, setYears] = useState<string>('');
   const [formData, setFormData] = useState({
     nama: '',
     telepon: '',
@@ -77,6 +78,11 @@ export default function Home() {
     const minutes = String(now.getMinutes()).padStart(2, '0');
     setCurrentTime(`${hours}:${minutes}`);
     
+    // Format Years
+    const years = String(now.getFullYear());
+    
+    setYears(`${years}`);
+
     // Format date in Indonesian
     const options: Intl.DateTimeFormatOptions = {
       weekday: 'long',
@@ -176,7 +182,7 @@ export default function Home() {
         keperluan: '',
       });
 
-      alert('Data pengunjung berhasil ditambahkan!');
+      alert('Data Berhasil Dikirimkan!');
     } catch (err) {
       console.error('Error submitting form:', err);
       setError('Terjadi kesalahan saat menambahkan data');
@@ -191,12 +197,11 @@ export default function Home() {
         <section className="hero-section">
           <div className="hero-content">
             <div className="hero-text">
-              <h1 className="hero-title">Hadirlah dengan tenang. <em>Kami menyambut Anda.</em></h1>
-              <p className="hero-description">Mohon isi data kunjungan singkat ini. Resepsionis akan menghubungi pihak terkait untuk menemani Anda selama berada di kantor kami.</p>
-            </div>
-            <div className="time-display">
               <p className="time">{currentTime}</p>
               <p className="date">{currentDate}</p>
+            </div>
+            <div className="time-display">
+                
             </div>
           </div>
         </section>
@@ -215,7 +220,7 @@ export default function Home() {
 
           <form onSubmit={handleSubmit} className="visitor-form">
             <div className="form-group">
-              <label htmlFor="nama">Nama Lengkap</label>
+              <label htmlFor="nama">Nama</label>
               <input
                 type="text"
                 id="nama"
@@ -308,7 +313,7 @@ export default function Home() {
             </button>
           </form>
 
-          <p className="form-footer-text">UPTD Pengelolaan Parkir @2026</p>
+          <p className="form-footer-text">UPTD Pengelolaan Parkir @{years}</p>
         </section>
       </main>
     </div>
