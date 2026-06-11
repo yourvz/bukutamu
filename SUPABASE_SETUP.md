@@ -16,36 +16,47 @@ Aplikasi **Buku Tamu Digital** telah diintegrasikan dengan **Supabase** untuk me
 - Project ID: `uwnpifnkdqneafcaiyhz` (existing)
 - URL: `https://uwnpifnkdqneafcaiyhz.supabase.co`
 
-### 3. Create Visitors Table
-Buka **SQL Editor** di Supabase Dashboard dan jalankan:
+### 3. Create Tamu Table
+Buka **SQL Editor** di Supabase Dashboard dan jalankan script ini:
+
+**File**: `SUPABASE_MIGRATION.sql` (sudah tersedia di repository)
+
+Atau copy-paste SQL ini:
 
 ```sql
--- Create visitors table
-CREATE TABLE visitors (
-  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  name TEXT NOT NULL,
-  phone TEXT NOT NULL,
-  email TEXT NOT NULL,
-  purpose TEXT NOT NULL,
-  company TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Create tamu table
+CREATE TABLE IF NOT EXISTS tamu (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    nama VARCHAR(255) NOT NULL,
+    telepon VARCHAR(20) NOT NULL,
+    dari VARCHAR(20) NOT NULL DEFAULT 'umum' CHECK (dari IN ('umum', 'instansi', 'organisasi')),
+    nama_instansi VARCHAR(255),
+    keperluan TEXT NOT NULL,
+    waktu_kunjungan TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create index for better performance
-CREATE INDEX idx_visitors_created_at ON visitors(created_at DESC);
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_tamu_nama ON tamu(nama);
+CREATE INDEX IF NOT EXISTS idx_tamu_telepon ON tamu(telepon);
+CREATE INDEX IF NOT EXISTS idx_tamu_dari ON tamu(dari);
+CREATE INDEX IF NOT EXISTS idx_tamu_waktu_kunjungan ON tamu(waktu_kunjungan DESC);
 
 -- Enable Row Level Security
-ALTER TABLE visitors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tamu ENABLE ROW LEVEL SECURITY;
 
--- Create RLS policy untuk INSERT (public - tanpa auth)
-CREATE POLICY "Enable insert for anonymous users" ON visitors
-  FOR INSERT 
-  WITH CHECK (true);
+-- Create RLS policies
+CREATE POLICY "Enable insert for anonymous" ON tamu FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable select for all" ON tamu FOR SELECT USING (true);
 
--- Create RLS policy untuk SELECT (public - tanpa auth)
-CREATE POLICY "Enable select for all users" ON visitors
-  FOR SELECT 
-  USING (true);
+-- Grant permissions
+GRANT SELECT, INSERT ON tamu TO anon;
 ```
 
 ### 4. Get API Keys
@@ -75,17 +86,21 @@ Add secrets:
 
 ## 📊 Table Schema
 
-### `visitors` Table
+### `tamu` Table
 
 | Column | Type | Nullable | Default | Notes |
 |--------|------|----------|---------|-------|
-| `id` | BIGINT | ❌ | GENERATED | Primary Key |
-| `name` | TEXT | ❌ | - | Nama pengunjung |
-| `phone` | TEXT | ❌ | - | No. telepon |
-| `email` | TEXT | ❌ | - | Email address |
-| `purpose` | TEXT | ❌ | - | Keperluan: meeting, service, survey, other |
-| `company` | TEXT | ✅ | NULL | Instansi/Perusahaan (optional) |
-| `created_at` | TIMESTAMP | ✅ | NOW() | Waktu kunjungan |
+| `id` | UUID | ❌ | GENERATED | Primary Key |
+| `nama` | VARCHAR(255) | ❌ | - | Nama pengunjung |
+| `telepon` | VARCHAR(20) | ❌ | - | No. telepon |
+| `dari` | VARCHAR(20) | ❌ | 'umum' | Category: umum/instansi/organisasi |
+| `nama_instansi` | VARCHAR(255) | ✅ | NULL | Instansi/Organisasi (optional) |
+| `keperluan` | TEXT | ❌ | - | Deskripsi keperluan kunjungan |
+| `waktu_kunjungan` | TIMESTAMP | ✅ | NOW() | Timestamp kunjungan |
+| `ip_address` | VARCHAR(45) | ✅ | NULL | IP address pengunjung |
+| `user_agent` | TEXT | ✅ | NULL | Browser/Device info |
+| `created_at` | TIMESTAMP | ✅ | NOW() | Created timestamp |
+| `updated_at` | TIMESTAMP | ✅ | NOW() | Updated timestamp |
 
 ---
 
@@ -95,19 +110,21 @@ Add secrets:
 
 **1. Insert Policy - Public Form Submission**
 ```sql
-CREATE POLICY "Enable insert for anonymous users" ON visitors
+CREATE POLICY "Enable insert for anonymous" ON tamu
   FOR INSERT 
   WITH CHECK (true);
 ```
 - Memungkinkan siapa saja submit form tanpa login
+- Cocok untuk public guest registration form
 
-**2. Select Policy - View All Visitors**
+**2. Select Policy - View All Tamu Data**
 ```sql
-CREATE POLICY "Enable select for all users" ON visitors
+CREATE POLICY "Enable select for all" ON tamu
   FOR SELECT 
   USING (true);
 ```
 - Memungkinkan siapa saja melihat daftar pengunjung
+- Data pengunjung publik (bukan sensitif)
 
 ### Status
 - ✅ RLS Enabled
@@ -121,19 +138,27 @@ CREATE POLICY "Enable select for all users" ON visitors
 ### Test Insert Data
 ```bash
 # Dari Next.js app atau Supabase console
-POST /rest/v1/visitors?apikey=anon_key
+POST /rest/v1/tamu?apikey=anon_key
 {
-  "name": "John Doe",
-  "phone": "081234567890",
-  "email": "john@example.com",
-  "purpose": "meeting",
-  "company": "PT Example"
+  "nama": "Budi Santoso",
+  "telepon": "081234567890",
+  "dari": "umum",
+  "nama_instansi": "PT Maju Jaya",
+  "keperluan": "Mendatangi kantor untuk mengurus surat"
 }
 ```
 
 ### Test Query Data
 ```bash
-GET /rest/v1/visitors?apikey=anon_key
+GET /rest/v1/tamu?apikey=anon_key
+```
+
+### Sample Insert (SQL)
+```sql
+INSERT INTO tamu (nama, telepon, dari, nama_instansi, keperluan) VALUES
+('Budi Santoso', '081234567890', 'umum', NULL, 'Mendatangi kantor untuk mengurus surat'),
+('Siti Nurhaliza', '082345678901', 'instansi', 'PT Maju Jaya', 'Kunjungan kerja sama bisnis'),
+('Ahmad Wijaya', '083456789012', 'organisasi', 'OSIS SMA Negeri 1', 'Acara gathering pelajar');
 ```
 
 ---
@@ -146,21 +171,21 @@ File: `app/page.tsx`
 ```typescript
 import { supabase } from '@/lib/supabase';
 
-// Load visitors
+// Load tamu data
 const { data } = await supabase
-  .from('visitors')
+  .from('tamu')
   .select('*')
-  .order('created_at', { ascending: false });
+  .order('waktu_kunjungan', { ascending: false });
 
-// Insert visitor
+// Insert tamu data
 const { data, error } = await supabase
-  .from('visitors')
+  .from('tamu')
   .insert([{
-    name: 'John Doe',
-    phone: '081234567890',
-    email: 'john@example.com',
-    purpose: 'meeting',
-    company: 'PT Example'
+    nama: 'Budi Santoso',
+    telepon: '081234567890',
+    dari: 'umum',
+    nama_instansi: 'PT Maju Jaya',
+    keperluan: 'Mendatangi kantor untuk mengurus surat'
   }]);
 ```
 
@@ -251,13 +276,21 @@ CREATE INDEX idx_visitors_company ON visitors(company);
 
 ## 📝 Environment Variables Reference
 
-| Variable | Type | Example | Required |
-|----------|------|---------|----------|
-| `NEXT_PUBLIC_SUPABASE_URL` | String | `https://...supabase.co` | ✅ Yes |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | String | `eyJxx...` | ✅ Yes |
-| `SUPABASE_SERVICE_ROLE_KEY` | String | `eyJxx...` | ❌ No* |
+### Required Variables
+Set di `.env.local` untuk local development atau GitHub Secrets untuk production:
 
-*Service role key only needed if using Supabase Admin SDK on backend
+| Variable | Type | Example | Required | Purpose |
+|----------|------|---------|----------|---------|
+| `NEXT_PUBLIC_SUPABASE_URL` | String | `https://xxxx.supabase.co` | ✅ Yes | Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | String | `eyJxx...` | ✅ Yes | Anon public key |
+
+### Optional Variables
+| Variable | Type | Purpose |
+|----------|------|---------|
+| `SUPABASE_SERVICE_ROLE_KEY` | String | Server-side only (not used in this app) |
+| `DATABASE_URL` | String | Alternative connection string |
+
+**Note**: `NEXT_PUBLIC_` prefix berarti safe untuk expose di frontend. Jangan commit `.env.local`!
 
 ---
 
