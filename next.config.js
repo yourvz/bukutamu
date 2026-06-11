@@ -1,13 +1,13 @@
 /** @type {import('next').NextConfig} */
-const path = require('path');
+const path = require("path");
 
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   output: "export",
-  distDir: "docs",  // Output to docs folder for GitHub Pages
-  // For GitHub Pages: always use /bukutamu basePath
-  basePath: "/bukutamu",
+  distDir: "docs", // Output to docs folder for GitHub Pages
+  // basePath is empty - /docs folder is served as root at /bukutamu/
+  basePath: "",
   images: {
     unoptimized: true,
   },
