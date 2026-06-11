@@ -36,6 +36,13 @@ interface Tamu {
   created_at?: string;
 }
 
+// Color mapping for categories
+const categoryColors: Record<'umum' | 'instansi' | 'organisasi', string> = {
+  umum: '#3B82F6',
+  instansi: '#10B981',
+  organisasi: '#F59E0B'
+};
+
 export default function Home() {
   const [tamuList, setTamuList] = useState<Tamu[]>([]);
   const [loading, setLoading] = useState(false);
@@ -87,6 +94,13 @@ export default function Home() {
       // Validate required fields
       if (!formData.nama || !formData.telepon || !formData.keperluan) {
         setError('Mohon isi semua field yang wajib (nama, telepon, keperluan)');
+        setLoading(false);
+        return;
+      }
+
+      // Validate instansi field if selected
+      if ((formData.dari === 'instansi' || formData.dari === 'organisasi') && !formData.nama_instansi) {
+        setError(`Mohon isi field "Dari ${formData.dari === 'instansi' ? 'Instansi' : 'Organisasi'}"`);
         setLoading(false);
         return;
       }
@@ -149,8 +163,55 @@ export default function Home() {
       </header>
 
       <main className="main-content">
+        <section className="visitors-section">
+          <h2>📋 Daftar Pengunjung Terbaru</h2>
+          {loading ? (
+            <p className="loading-text">⏳ Memuat data pengunjung...</p>
+          ) : tamuList.length > 0 ? (
+            <div className="visitors-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nama</th>
+                    <th>Telepon</th>
+                    <th>Dari</th>
+                    <th>Instansi/Organisasi</th>
+                    <th>Keperluan</th>
+                    <th>Waktu Kunjungan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tamuList.map((tamu, idx) => (
+                    <tr key={tamu.id || idx} className={`row-${tamu.dari}`}>
+                      <td className="nama-cell">👤 {tamu.nama}</td>
+                      <td className="telepon-cell">📞 {tamu.telepon}</td>
+                      <td className="dari-cell">
+                        <span className={`badge badge-${tamu.dari}`}>
+                          {tamu.dari === 'umum' ? 'Umum' : tamu.dari === 'instansi' ? 'Instansi' : 'Organisasi'}
+                        </span>
+                      </td>
+                      <td className="instansi-cell">{tamu.nama_instansi || '-'}</td>
+                      <td className="keperluan-cell">{tamu.keperluan.substring(0, 50)}...</td>
+                      <td className="time-cell">🕐 {new Date(tamu.waktu_kunjungan || tamu.created_at || Date.now()).toLocaleString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="no-data">📭 Belum ada data pengunjung</p>
+          )}
+        </section>
+
         <section className="form-section">
           <h2>📝 Daftarkan Kunjungan Anda</h2>
+          
+          {error && (
+            <div className="error-banner">
+              ⚠️ {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="visitor-form">
             <div className="form-group">
               <label htmlFor="nama">Nama Lengkap *</label>
@@ -187,9 +248,15 @@ export default function Home() {
                   id="dari"
                   required
                   value={formData.dari}
-                  onChange={(e) =>
-                    setFormData({ ...formData, dari: e.target.value as 'umum' | 'instansi' | 'organisasi' })
-                  }
+                  onChange={(e) => {
+                    const newDari = e.target.value as 'umum' | 'instansi' | 'organisasi';
+                    setFormData({ 
+                      ...formData, 
+                      dari: newDari,
+                      // Clear nama_instansi when switching to umum
+                      nama_instansi: newDari === 'umum' ? '' : formData.nama_instansi
+                    });
+                  }}
                 >
                   <option value="umum">Umum</option>
                   <option value="instansi">Instansi</option>
@@ -198,18 +265,23 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="nama_instansi">Instansi/Perusahaan/Organisasi</label>
-              <input
-                type="text"
-                id="nama_instansi"
-                value={formData.nama_instansi}
-                onChange={(e) =>
-                  setFormData({ ...formData, nama_instansi: e.target.value })
-                }
-                placeholder="Masukkan nama instansi atau organisasi (jika ada)"
-              />
-            </div>
+            {(formData.dari === 'instansi' || formData.dari === 'organisasi') && (
+              <div className="form-group">
+                <label htmlFor="nama_instansi">
+                  Dari {formData.dari === 'instansi' ? 'Instansi' : 'Organisasi'} *
+                </label>
+                <input
+                  type="text"
+                  id="nama_instansi"
+                  required
+                  value={formData.nama_instansi}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nama_instansi: e.target.value })
+                  }
+                  placeholder={`Masukkan nama ${formData.dari === 'instansi' ? 'instansi/perusahaan' : 'organisasi'}`}
+                />
+              </div>
+            )}
 
             <div className="form-group">
               <label htmlFor="keperluan">Keperluan Kunjungan *</label>
@@ -233,53 +305,6 @@ export default function Home() {
               {loading ? 'Menyimpan...' : 'Daftarkan Kunjungan'}
             </button>
           </form>
-        </section>
-
-        <section className="visitors-section">
-          <h2>📋 Daftar Pengunjung Terbaru</h2>
-          
-          {error && (
-            <div className="error-banner">
-              ⚠️ {error}
-            </div>
-          )}
-
-          {loading ? (
-            <p className="loading-text">⏳ Memuat data pengunjung...</p>
-          ) : tamuList.length > 0 ? (
-            <div className="visitors-list">
-              {tamuList.map((tamu, idx) => (
-                <div key={tamu.id || idx} className="visitor-card">
-                  <div className="visitor-info">
-                    <h3>👤 {tamu.nama}</h3>
-                    <p>
-                      <strong>📞 Telepon:</strong> {tamu.telepon}
-                    </p>
-                    <p>
-                      <strong>🏢 Dari:</strong> 
-                      <span className={`category-badge ${tamu.dari}`}>
-                        {tamu.dari === 'umum' ? 'Umum' : tamu.dari === 'instansi' ? 'Instansi' : 'Organisasi'}
-                      </span>
-                    </p>
-                    {tamu.nama_instansi && (
-                      <p>
-                        <strong>🏛️ Instansi:</strong> {tamu.nama_instansi}
-                      </p>
-                    )}
-                    <p>
-                      <strong>📌 Keperluan:</strong>
-                      <span className="keperluan-text">{tamu.keperluan}</span>
-                    </p>
-                    <p className="visit-time">
-                      🕐 {new Date(tamu.waktu_kunjungan || tamu.created_at || Date.now()).toLocaleString('id-ID')}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="no-data">📭 Belum ada data pengunjung</p>
-          )}
         </section>
       </main>
 

@@ -3,16 +3,21 @@
    ============================================ */
 
 :root {
-  --primary-dark: #1a1a2e;
-  --primary-darker: #0f0f1e;
-  --accent: #6b5b95;
+  --primary-blue: #0066cc;
+  --primary-dark: #004399;
+  --secondary-blue: #0099ff;
+  --accent-blue: #0077ff;
   --text-primary: #111827;
   --text-secondary: #6b7280;
   --border: #e5e7eb;
   --light-bg: #ffffff;
   --light-gray: #f9fafb;
+  --blue-light: #f0f7ff;
   --success: #10b981;
   --error: #ef4444;
+  --badge-umum: #3b82f6;
+  --badge-instansi: #10b981;
+  --badge-organisasi: #f59e0b;
 }
 
 * {
@@ -37,11 +42,12 @@ html, body {
 
 /* ============ HEADER ============ */
 .header {
-  background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(15, 15, 30, 0.98) 100%);
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
   color: white;
   padding: 3rem 2rem;
   text-align: center;
-  border-bottom: 3px solid var(--accent);
+  border-bottom: 4px solid var(--secondary-blue);
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
 }
 
 .header h1 {
@@ -61,14 +67,26 @@ html, body {
 .main-content {
   flex: 1;
   padding: 2rem;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .main-content {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
 }
 
 @media (max-width: 768px) {
   .main-content {
     padding: 1rem;
+    gap: 1rem;
   }
 }
 
@@ -79,17 +97,24 @@ html, body {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.3s ease;
+  border-top: 4px solid var(--primary-blue);
+}
+
+.form-section:hover,
+.visitors-section:hover {
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.12);
 }
 
 .form-section h2,
 .visitors-section h2 {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   margin-bottom: 1.5rem;
-  color: var(--text-primary);
-  border-bottom: 2px solid var(--accent);
-  padding-bottom: 0.5rem;
+  color: var(--primary-blue);
+  border-bottom: 2px solid var(--secondary-blue);
+  padding-bottom: 0.75rem;
+  font-weight: 700;
 }
 
 /* ============ FORM STYLES ============ */
@@ -144,8 +169,8 @@ html, body {
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(107, 91, 149, 0.1);
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
 }
 
 .form-group input::placeholder {
@@ -154,7 +179,7 @@ html, body {
 
 .btn-submit {
   padding: 0.875rem 1.5rem;
-  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-darker) 100%);
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
   color: white;
   border: none;
   border-radius: 6px;
@@ -169,7 +194,7 @@ html, body {
 
 .btn-submit:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(26, 26, 46, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 102, 204, 0.3);
 }
 
 .btn-submit:disabled {
@@ -177,52 +202,75 @@ html, body {
   cursor: not-allowed;
 }
 
-/* ============ VISITORS LIST ============ */
-.visitors-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-.visitor-card {
-  background: var(--light-gray);
-  border: 1px solid var(--border);
+/* ============ VISITORS TABLE ============ */
+.visitors-table {
+  overflow-x: auto;
   border-radius: 8px;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
-  border-left: 4px solid var(--accent);
+  border: 1px solid var(--border);
 }
 
-.visitor-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
+.visitors-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--light-bg);
 }
 
-.visitor-info h3 {
-  font-size: 1.1rem;
-  color: var(--text-primary);
-  margin-bottom: 0.75rem;
+.visitors-table thead {
+  background: linear-gradient(135deg, var(--blue-light) 0%, #e6f2ff 100%);
+  border-bottom: 2px solid var(--primary-blue);
 }
 
-.visitor-info p {
+.visitors-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 700;
+  color: var(--primary-blue);
   font-size: 0.9rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
-  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
-.visitor-info p strong {
+.visitors-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.visitors-table tbody tr:hover {
+  background: var(--blue-light);
+}
+
+.visitors-table td {
+  padding: 1rem;
+  font-size: 0.9rem;
   color: var(--text-primary);
-  font-weight: 600;
 }
 
-.visit-time {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
+.visitors-table td.dari-cell {
+  padding: 0.75rem 1rem;
+}
+
+.visitors-table td.time-cell {
   font-size: 0.85rem;
-  color: var(--accent);
-  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.visitors-table td.keperluan-cell {
+  max-width: 200px;
+  word-break: break-word;
+}
+
+.row-umum {
+  border-left: 4px solid var(--badge-umum);
+}
+
+.row-instansi {
+  border-left: 4px solid var(--badge-instansi);
+}
+
+.row-organisasi {
+  border-left: 4px solid var(--badge-organisasi);
 }
 
 .no-data {
@@ -257,7 +305,29 @@ html, body {
   gap: 0.5rem;
 }
 
-/* ============ CATEGORY BADGES ============ */
+/* ============ BADGES ============ */
+.badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+  text-transform: capitalize;
+}
+
+.badge-umum {
+  background-color: var(--badge-umum);
+}
+
+.badge-instansi {
+  background-color: var(--badge-instansi);
+}
+
+.badge-organisasi {
+  background-color: var(--badge-organisasi);
+}
+
 .category-badge {
   display: inline-block;
   padding: 0.35rem 0.75rem;
@@ -269,15 +339,15 @@ html, body {
 }
 
 .category-badge.umum {
-  background-color: #3b82f6;
+  background-color: var(--badge-umum);
 }
 
 .category-badge.instansi {
-  background-color: #10b981;
+  background-color: var(--badge-instansi);
 }
 
 .category-badge.organisasi {
-  background-color: #f59e0b;
+  background-color: var(--badge-organisasi);
 }
 
 /* ============ KEPERLUAN TEXT ============ */
@@ -286,7 +356,7 @@ html, body {
   margin-top: 0.5rem;
   padding: 0.5rem;
   background-color: var(--light-gray);
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--primary-blue);
   border-radius: 4px;
   font-style: italic;
   line-height: 1.6;
@@ -294,15 +364,23 @@ html, body {
 
 /* ============ FOOTER ============ */
 .footer {
-  background: var(--primary-dark);
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-blue) 100%);
   color: white;
   text-align: center;
   padding: 1.5rem;
   margin-top: auto;
   font-size: 0.9rem;
+  border-top: 1px solid var(--secondary-blue);
 }
 
 /* ============ RESPONSIVE ============ */
+@media (max-width: 1024px) {
+  .form-section,
+  .visitors-section {
+    padding: 1.5rem;
+  }
+}
+
 @media (max-width: 768px) {
   .header h1 {
     font-size: 1.75rem;
@@ -317,8 +395,18 @@ html, body {
     padding: 1.5rem;
   }
 
-  .visitors-list {
+  .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .visitors-table th,
+  .visitors-table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .visitors-table td.keperluan-cell {
+    max-width: 150px;
   }
 }
 
