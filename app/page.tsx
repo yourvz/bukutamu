@@ -157,55 +157,27 @@ export default function Home() {
 
   return (
     <div className="container">
-      <header className="header">
-        <h1>📋 Buku Tamu Digital</h1>
-        <p>Aplikasi Pencatatan Pengunjung Modern</p>
-      </header>
-
       <main className="main-content">
-        <section className="visitors-section">
-          <h2>📋 Daftar Pengunjung Terbaru</h2>
-          {loading ? (
-            <p className="loading-text">⏳ Memuat data pengunjung...</p>
-          ) : tamuList.length > 0 ? (
-            <div className="visitors-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Nama</th>
-                    <th>Telepon</th>
-                    <th>Dari</th>
-                    <th>Instansi/Organisasi</th>
-                    <th>Keperluan</th>
-                    <th>Waktu Kunjungan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tamuList.map((tamu, idx) => (
-                    <tr key={tamu.id || idx} className={`row-${tamu.dari}`}>
-                      <td className="nama-cell">👤 {tamu.nama}</td>
-                      <td className="telepon-cell">📞 {tamu.telepon}</td>
-                      <td className="dari-cell">
-                        <span className={`badge badge-${tamu.dari}`}>
-                          {tamu.dari === 'umum' ? 'Umum' : tamu.dari === 'instansi' ? 'Instansi' : 'Organisasi'}
-                        </span>
-                      </td>
-                      <td className="instansi-cell">{tamu.nama_instansi || '-'}</td>
-                      <td className="keperluan-cell">{tamu.keperluan.substring(0, 50)}...</td>
-                      <td className="time-cell">🕐 {new Date(tamu.waktu_kunjungan || tamu.created_at || Date.now()).toLocaleString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <section className="hero-section">
+          <div className="hero-content">
+            <h1 className="hero-title">Hadirlah dengan tenang. <em>Kami menyambut Anda.</em></h1>
+            <p className="hero-description">Mohon isi data kunjungan singkat ini. Resepsionis akan menghubungi pihak terkait untuk menemani Anda selama berada di kantor kami.</p>
+            <div className="hero-footer">
+              <div className="time-display">
+                <p className="time">19:19</p>
+                <p className="date">Selasa, 9 Juni 2026</p>
+              </div>
             </div>
-          ) : (
-            <p className="no-data">📭 Belum ada data pengunjung</p>
-          )}
+          </div>
         </section>
 
-        <section className="form-section">
-          <h2>📝 Daftarkan Kunjungan Anda</h2>
-          
+        <section className="form-panel-section">
+          <div className="form-panel-header">
+            <span className="form-label">BUKU TAMU</span>
+            <h2>Daftarkan kunjungan Anda</h2>
+            <p className="form-subtitle">Mohon isi formulir di bawah ini. Proses hanya membutuhkan kurang dari satu menit.</p>
+          </div>
+
           {error && (
             <div className="error-banner">
               ⚠️ {error}
@@ -305,12 +277,10 @@ export default function Home() {
               {loading ? 'Menyimpan...' : 'Daftarkan Kunjungan'}
             </button>
           </form>
+
+          <p className="form-footer-text">Dengan mengisi formulir, Anda menyetujui pencatatan data kunjungan untuk keperluan administrasi internal</p>
         </section>
       </main>
-
-      <footer className="footer">
-        <p>&copy; 2026 Buku Tamu Digital. All rights reserved.</p>
-      </footer>
     </div>
   );
 }
