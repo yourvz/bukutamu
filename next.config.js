@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
+const isProduction = process.env.NODE_ENV === "production";
+
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   output: "export",
-  basePath: "/bukutamu",
-  assetPrefix: "/bukutamu/",
+  basePath: isProduction ? "/bukutamu" : "",
+  assetPrefix: isProduction ? "/bukutamu/" : "",
   images: {
     unoptimized: true,
   },
