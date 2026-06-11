@@ -47,6 +47,8 @@ export default function Home() {
   const [tamuList, setTamuList] = useState<Tamu[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState<string>('');
+  const [currentDate, setCurrentDate] = useState<string>('');
   const [formData, setFormData] = useState({
     nama: '',
     telepon: '',
@@ -57,7 +59,35 @@ export default function Home() {
 
   useEffect(() => {
     loadTamu();
+    
+    // Set initial time
+    updateTime();
+    
+    // Update time every second
+    const intervalId = setInterval(updateTime, 1000);
+    
+    return () => clearInterval(intervalId);
   }, []);
+
+  const updateTime = () => {
+    const now = new Date();
+    
+    // Format time as HH:MM:SS or HH:MM
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    setCurrentTime(`${hours}:${minutes}`);
+    
+    // Format date in Indonesian
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'Asia/Jakarta'
+    };
+    const dateFormatter = new Intl.DateTimeFormat('id-ID', options);
+    setCurrentDate(dateFormatter.format(now));
+  };
 
   const loadTamu = async () => {
     try {
@@ -160,13 +190,13 @@ export default function Home() {
       <main className="main-content">
         <section className="hero-section">
           <div className="hero-content">
-            <h1 className="hero-title">Hadirlah dengan tenang. <em>Kami menyambut Anda.</em></h1>
-            <p className="hero-description">Mohon isi data kunjungan singkat ini. Resepsionis akan menghubungi pihak terkait untuk menemani Anda selama berada di kantor kami.</p>
-            <div className="hero-footer">
-              <div className="time-display">
-                <p className="time">19:19</p>
-                <p className="date">Selasa, 9 Juni 2026</p>
-              </div>
+            <div className="hero-text">
+              <h1 className="hero-title">Hadirlah dengan tenang. <em>Kami menyambut Anda.</em></h1>
+              <p className="hero-description">Mohon isi data kunjungan singkat ini. Resepsionis akan menghubungi pihak terkait untuk menemani Anda selama berada di kantor kami.</p>
+            </div>
+            <div className="time-display">
+              <p className="time">{currentTime}</p>
+              <p className="date">{currentDate}</p>
             </div>
           </div>
         </section>
@@ -174,7 +204,6 @@ export default function Home() {
         <section className="form-panel-section">
           <div className="form-panel-header">
             <span className="form-label">BUKU TAMU</span>
-            <h2>Daftarkan kunjungan Anda</h2>
             <p className="form-subtitle">Mohon isi formulir di bawah ini. Proses hanya membutuhkan kurang dari satu menit.</p>
           </div>
 
@@ -186,7 +215,7 @@ export default function Home() {
 
           <form onSubmit={handleSubmit} className="visitor-form">
             <div className="form-group">
-              <label htmlFor="nama">Nama Lengkap *</label>
+              <label htmlFor="nama">Nama Lengkap</label>
               <input
                 type="text"
                 id="nama"
@@ -201,7 +230,7 @@ export default function Home() {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="telepon">No. Telepon *</label>
+                <label htmlFor="telepon">No. Telepon</label>
                 <input
                   type="tel"
                   id="telepon"
@@ -211,11 +240,12 @@ export default function Home() {
                     setFormData({ ...formData, telepon: e.target.value })
                   }
                   placeholder="Contoh: 081234567890"
+                  maxLength={15}
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="dari">Dari *</label>
+                <label htmlFor="dari">Dari</label>
                 <select
                   id="dari"
                   required
@@ -240,7 +270,7 @@ export default function Home() {
             {(formData.dari === 'instansi' || formData.dari === 'organisasi') && (
               <div className="form-group">
                 <label htmlFor="nama_instansi">
-                  Dari {formData.dari === 'instansi' ? 'Instansi' : 'Organisasi'} *
+                  Dari {formData.dari === 'instansi' ? 'Instansi' : 'Organisasi'}
                 </label>
                 <input
                   type="text"
@@ -256,7 +286,7 @@ export default function Home() {
             )}
 
             <div className="form-group">
-              <label htmlFor="keperluan">Keperluan Kunjungan *</label>
+              <label htmlFor="keperluan">Keperluan</label>
               <textarea
                 id="keperluan"
                 required
@@ -274,11 +304,11 @@ export default function Home() {
               disabled={loading}
               className="btn-submit"
             >
-              {loading ? 'Menyimpan...' : 'Daftarkan Kunjungan'}
+              {loading ? 'Mengirimkan...' : 'Kirim'}
             </button>
           </form>
 
-          <p className="form-footer-text">Dengan mengisi formulir, Anda menyetujui pencatatan data kunjungan untuk keperluan administrasi internal</p>
+          <p className="form-footer-text">UPTD Pengelolaan Parkir @2026</p>
         </section>
       </main>
     </div>
