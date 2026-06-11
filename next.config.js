@@ -1,10 +1,11 @@
 /** @type {import('next').NextConfig} */
-const isProduction = process.env.NODE_ENV === "production";
+const path = require('path');
 
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   output: "export",
+  distDir: "docs",  // Output to docs folder for GitHub Pages
   // For GitHub Pages: always use /bukutamu basePath
   basePath: "/bukutamu",
   images: {
