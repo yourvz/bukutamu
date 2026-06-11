@@ -11,14 +11,14 @@ if (-not $token) {
 
 $headers = @{
     "Authorization" = "token $token"
-    "Accept" = "application/vnd.github.switcheroo-preview+json"
-    "Content-Type" = "application/json"
+    "Accept"        = "application/vnd.github.switcheroo-preview+json"
+    "Content-Type"  = "application/json"
 }
 
 $body = @{
     source = @{
         branch = "main"
-        path = "/docs"
+        path   = "/docs"
     }
 } | ConvertTo-Json
 
@@ -36,7 +36,8 @@ $response = Invoke-WebRequest -Uri "https://api.github.com/repos/$owner/$repo/pa
 if ($response.StatusCode -eq 200 -or $response.StatusCode -eq 201) {
     Write-Host "✅ Success! GitHub Pages configured to serve from /docs folder"
     Write-Host $response.Content
-} else {
+}
+else {
     Write-Host "❌ Error: Status $($response.StatusCode)"
     Write-Host $response.Content
 }

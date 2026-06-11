@@ -30,8 +30,9 @@ jobs:
       - name: Build Next.js (outputs to docs/)
         run: npm run build
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          # Environment variables are hardcoded in next.config.js
+          # No secrets needed for this public app
+          NODE_ENV: production
 
       - name: Deploy to GitHub Pages using gh-pages branch
         uses: peaceiris/actions-gh-pages@v3
