@@ -5,8 +5,8 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   output: "export",
-  basePath: isProduction ? "/bukutamu" : "",
-  assetPrefix: isProduction ? "/bukutamu/" : "",
+  // For GitHub Pages: always use /bukutamu basePath
+  basePath: "/bukutamu",
   images: {
     unoptimized: true,
   },
