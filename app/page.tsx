@@ -1,20 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import '../styles/modern.css';
 
 interface Visitor {
+  id?: string;
   name: string;
   phone: string;
   email: string;
   purpose: string;
-  company: string;
-  createdAt: string;
+  company?: string;
+  created_at?: string;
 }
 
 export default function Home() {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -23,18 +26,73 @@ export default function Home() {
     company: '',
   });
 
+  useEffect(() => {
+    loadVisitors();
+  }, []);
+
+  const loadVisitors = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error: fetchError } = await supabase
+        .from('visitors')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (fetchError) {
+        console.error('Fetch error:', fetchError);
+        throw fetchError;
+      }
+
+      setVisitors(data || []);
+    } catch (err) {
+      console.error('Error loading visitors:', err);
+      setError('Gagal memuat data pengunjung. Menggunakan mode offline.');
+      // Fallback ke local state jika Supabase error
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setLoading(true);
-      
-      // Add visitor to local state
-      const newVisitor: Visitor = {
-        ...formData,
-        createdAt: new Date().toLocaleString('id-ID'),
-      };
-      
-      setVisitors([newVisitor, ...visitors]);
+      setError(null);
+
+      // Try to save to Supabase
+      const { data, error: insertError } = await supabase
+        .from('visitors')
+        .insert([
+          {
+            name: formData.name,
+            phone: formData.phone,
+            email: formData.email,
+            purpose: formData.purpose,
+            company: formData.company || null,
+          },
+        ])
+        .select();
+
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        // Fallback: Add to local state if Supabase fails
+        const newVisitor: Visitor = {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          purpose: formData.purpose,
+          company: formData.company,
+          created_at: new Date().toISOString(),
+        };
+        setVisitors([newVisitor, ...visitors]);
+        setError('Data disimpan secara lokal (offline mode)');
+      } else if (data) {
+        // Success - reload from database
+        await loadVisitors();
+      }
 
       // Reset form
       setFormData({
@@ -46,9 +104,9 @@ export default function Home() {
       });
 
       alert('Data pengunjung berhasil ditambahkan!');
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      alert('Terjadi kesalahan saat menambahkan data');
+    } catch (err) {
+      console.error('Error submitting form:', err);
+      setError('Terjadi kesalahan saat menambahkan data');
     } finally {
       setLoading(false);
     }
@@ -152,10 +210,19 @@ export default function Home() {
 
         <section className="visitors-section">
           <h2>Daftar Pengunjung Terbaru</h2>
-          {visitors.length > 0 ? (
+          
+          {error && (
+            <div className="error-banner">
+              ⚠️ {error}
+            </div>
+          )}
+
+          {loading ? (
+            <p className="loading-text">Memuat data pengunjung...</p>
+          ) : visitors.length > 0 ? (
             <div className="visitors-list">
-              {visitors.map((visitor, idx) => (
-                <div key={idx} className="visitor-card">
+              {visitors.map((visitor) => (
+                <div key={visitor.id || visitor.email} className="visitor-card">
                   <div className="visitor-info">
                     <h3>{visitor.name}</h3>
                     <p>
@@ -173,7 +240,7 @@ export default function Home() {
                       <strong>Keperluan:</strong> {visitor.purpose}
                     </p>
                     <p className="visit-time">
-                      📅 {visitor.createdAt}
+                      📅 {new Date(visitor.created_at || visitor.createdAt || Date.now()).toLocaleString('id-ID')}
                     </p>
                   </div>
                 </div>
