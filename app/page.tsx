@@ -4,41 +4,42 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import '../styles/modern.css';
 
-interface Visitor {
+interface Tamu {
   id?: string;
-  name: string;
-  phone: string;
-  email: string;
-  purpose: string;
-  company?: string;
+  nama: string;
+  telepon: string;
+  dari: 'umum' | 'instansi' | 'organisasi';
+  nama_instansi?: string;
+  keperluan: string;
+  waktu_kunjungan?: string;
   created_at?: string;
 }
 
 export default function Home() {
-  const [visitors, setVisitors] = useState<Visitor[]>([]);
+  const [tamuList, setTamuList] = useState<Tamu[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    purpose: '',
-    company: '',
+    nama: '',
+    telepon: '',
+    dari: 'umum' as 'umum' | 'instansi' | 'organisasi',
+    nama_instansi: '',
+    keperluan: '',
   });
 
   useEffect(() => {
-    loadVisitors();
+    loadTamu();
   }, []);
 
-  const loadVisitors = async () => {
+  const loadTamu = async () => {
     try {
       setLoading(true);
       setError(null);
       
       const { data, error: fetchError } = await supabase
-        .from('visitors')
+        .from('tamu')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('waktu_kunjungan', { ascending: false })
         .limit(50);
 
       if (fetchError) {
@@ -46,9 +47,9 @@ export default function Home() {
         throw fetchError;
       }
 
-      setVisitors(data || []);
+      setTamuList(data || []);
     } catch (err) {
-      console.error('Error loading visitors:', err);
+      console.error('Error loading tamu:', err);
       setError('Gagal memuat data pengunjung. Menggunakan mode offline.');
       // Fallback ke local state jika Supabase error
     } finally {
@@ -62,16 +63,23 @@ export default function Home() {
       setLoading(true);
       setError(null);
 
+      // Validate required fields
+      if (!formData.nama || !formData.telepon || !formData.keperluan) {
+        setError('Mohon isi semua field yang wajib (nama, telepon, keperluan)');
+        setLoading(false);
+        return;
+      }
+
       // Try to save to Supabase
       const { data, error: insertError } = await supabase
-        .from('visitors')
+        .from('tamu')
         .insert([
           {
-            name: formData.name,
-            phone: formData.phone,
-            email: formData.email,
-            purpose: formData.purpose,
-            company: formData.company || null,
+            nama: formData.nama,
+            telepon: formData.telepon,
+            dari: formData.dari,
+            nama_instansi: formData.nama_instansi || null,
+            keperluan: formData.keperluan,
           },
         ])
         .select();
@@ -79,28 +87,28 @@ export default function Home() {
       if (insertError) {
         console.error('Insert error:', insertError);
         // Fallback: Add to local state if Supabase fails
-        const newVisitor: Visitor = {
-          name: formData.name,
-          phone: formData.phone,
-          email: formData.email,
-          purpose: formData.purpose,
-          company: formData.company,
-          created_at: new Date().toISOString(),
+        const newTamu: Tamu = {
+          nama: formData.nama,
+          telepon: formData.telepon,
+          dari: formData.dari,
+          nama_instansi: formData.nama_instansi,
+          keperluan: formData.keperluan,
+          waktu_kunjungan: new Date().toISOString(),
         };
-        setVisitors([newVisitor, ...visitors]);
+        setTamuList([newTamu, ...tamuList]);
         setError('Data disimpan secara lokal (offline mode)');
       } else if (data) {
         // Success - reload from database
-        await loadVisitors();
+        await loadTamu();
       }
 
       // Reset form
       setFormData({
-        name: '',
-        phone: '',
-        email: '',
-        purpose: '',
-        company: '',
+        nama: '',
+        telepon: '',
+        dari: 'umum',
+        nama_instansi: '',
+        keperluan: '',
       });
 
       alert('Data pengunjung berhasil ditambahkan!');
@@ -121,17 +129,17 @@ export default function Home() {
 
       <main className="main-content">
         <section className="form-section">
-          <h2>Daftarkan Kunjungan Anda</h2>
+          <h2>📝 Daftarkan Kunjungan Anda</h2>
           <form onSubmit={handleSubmit} className="visitor-form">
             <div className="form-group">
-              <label htmlFor="name">Nama Lengkap *</label>
+              <label htmlFor="nama">Nama Lengkap *</label>
               <input
                 type="text"
-                id="name"
+                id="nama"
                 required
-                value={formData.name}
+                value={formData.nama}
                 onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
+                  setFormData({ ...formData, nama: e.target.value })
                 }
                 placeholder="Masukkan nama lengkap Anda"
               />
@@ -139,63 +147,61 @@ export default function Home() {
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="phone">No. Telepon *</label>
+                <label htmlFor="telepon">No. Telepon *</label>
                 <input
                   type="tel"
-                  id="phone"
+                  id="telepon"
                   required
-                  value={formData.phone}
+                  value={formData.telepon}
                   onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
+                    setFormData({ ...formData, telepon: e.target.value })
                   }
                   placeholder="Contoh: 081234567890"
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="email">Email *</label>
-                <input
-                  type="email"
-                  id="email"
+                <label htmlFor="dari">Dari *</label>
+                <select
+                  id="dari"
                   required
-                  value={formData.email}
+                  value={formData.dari}
                   onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
+                    setFormData({ ...formData, dari: e.target.value as 'umum' | 'instansi' | 'organisasi' })
                   }
-                  placeholder="nama@contoh.com"
-                />
+                >
+                  <option value="umum">Umum</option>
+                  <option value="instansi">Instansi</option>
+                  <option value="organisasi">Organisasi</option>
+                </select>
               </div>
             </div>
 
             <div className="form-group">
-              <label htmlFor="company">Instansi/Perusahaan</label>
+              <label htmlFor="nama_instansi">Instansi/Perusahaan/Organisasi</label>
               <input
                 type="text"
-                id="company"
-                value={formData.company}
+                id="nama_instansi"
+                value={formData.nama_instansi}
                 onChange={(e) =>
-                  setFormData({ ...formData, company: e.target.value })
+                  setFormData({ ...formData, nama_instansi: e.target.value })
                 }
-                placeholder="Masukkan nama instansi atau perusahaan"
+                placeholder="Masukkan nama instansi atau organisasi (jika ada)"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="purpose">Keperluan Kunjungan *</label>
-              <select
-                id="purpose"
+              <label htmlFor="keperluan">Keperluan Kunjungan *</label>
+              <textarea
+                id="keperluan"
                 required
-                value={formData.purpose}
+                rows={4}
+                value={formData.keperluan}
                 onChange={(e) =>
-                  setFormData({ ...formData, purpose: e.target.value })
+                  setFormData({ ...formData, keperluan: e.target.value })
                 }
-              >
-                <option value="">-- Pilih Keperluan --</option>
-                <option value="meeting">Rapat/Meeting</option>
-                <option value="service">Layanan</option>
-                <option value="survey">Survey</option>
-                <option value="other">Lainnya</option>
-              </select>
+                placeholder="Jelaskan keperluan kunjungan Anda..."
+              />
             </div>
 
             <button
@@ -209,7 +215,7 @@ export default function Home() {
         </section>
 
         <section className="visitors-section">
-          <h2>Daftar Pengunjung Terbaru</h2>
+          <h2>📋 Daftar Pengunjung Terbaru</h2>
           
           {error && (
             <div className="error-banner">
@@ -218,36 +224,40 @@ export default function Home() {
           )}
 
           {loading ? (
-            <p className="loading-text">Memuat data pengunjung...</p>
-          ) : visitors.length > 0 ? (
+            <p className="loading-text">⏳ Memuat data pengunjung...</p>
+          ) : tamuList.length > 0 ? (
             <div className="visitors-list">
-              {visitors.map((visitor) => (
-                <div key={visitor.id || visitor.email} className="visitor-card">
+              {tamuList.map((tamu, idx) => (
+                <div key={tamu.id || idx} className="visitor-card">
                   <div className="visitor-info">
-                    <h3>{visitor.name}</h3>
+                    <h3>👤 {tamu.nama}</h3>
                     <p>
-                      <strong>Telepon:</strong> {visitor.phone}
+                      <strong>📞 Telepon:</strong> {tamu.telepon}
                     </p>
                     <p>
-                      <strong>Email:</strong> {visitor.email}
+                      <strong>🏢 Dari:</strong> 
+                      <span className={`category-badge ${tamu.dari}`}>
+                        {tamu.dari === 'umum' ? 'Umum' : tamu.dari === 'instansi' ? 'Instansi' : 'Organisasi'}
+                      </span>
                     </p>
-                    {visitor.company && (
+                    {tamu.nama_instansi && (
                       <p>
-                        <strong>Instansi:</strong> {visitor.company}
+                        <strong>🏛️ Instansi:</strong> {tamu.nama_instansi}
                       </p>
                     )}
                     <p>
-                      <strong>Keperluan:</strong> {visitor.purpose}
+                      <strong>📌 Keperluan:</strong>
+                      <span className="keperluan-text">{tamu.keperluan}</span>
                     </p>
                     <p className="visit-time">
-                      📅 {new Date(visitor.created_at || visitor.createdAt || Date.now()).toLocaleString('id-ID')}
+                      🕐 {new Date(tamu.waktu_kunjungan || tamu.created_at || Date.now()).toLocaleString('id-ID')}
                     </p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="no-data">Belum ada data pengunjung</p>
+            <p className="no-data">📭 Belum ada data pengunjung</p>
           )}
         </section>
       </main>
