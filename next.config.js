@@ -5,9 +5,8 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   output: "export",
-  distDir: "docs", // Output to docs folder
-  // No basePath needed - GitHub Pages will serve /docs as the root
-  basePath: "",
+  distDir: "docs", // Output ke docs folder untuk GitHub Pages
+  basePath: "", // Assets tanpa prefix
   images: {
     unoptimized: true,
   },
