@@ -1,29 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-// Dynamic import Supabase with fallback
-let supabase: any = null;
-try {
-  // Try to import Supabase
-  const { supabase: sb } = require('@/lib/supabase');
-  supabase = sb;
-} catch (err) {
-  // Fallback to mock if Supabase fails
-  console.warn('Supabase initialization failed, using mock mode');
-  supabase = {
-    from: () => ({
-      select: () => ({
-        order: () => ({
-          limit: () => ({ then: async (cb: any) => cb({ data: [], error: null }) })
-        })
-      }),
-      insert: () => ({
-        select: () => ({ then: async (cb: any) => cb({ data: [], error: null }) })
-      })
-    })
-  };
-}
+import { supabase } from '@/lib/supabase';
 
 interface Tamu {
   id?: string;
